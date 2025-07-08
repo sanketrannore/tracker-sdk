@@ -1,32 +1,43 @@
 {
   "name": "tracker-sdk",
   "version": "1.0.0",
-  "main": "index.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
+  "description": "New event tracking SDK",
+  "main": "dist/web/index.js",
+  "module": "dist/web/index.mjs",
+  "types": "dist/web/index.d.ts",
   "files": [
-    "dist"
+    "dist/",
+    "README.md",
+    "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/tracker-sdk.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Sanket sanketrannre@gmail.com",
+  "keywords": [
+    "analytics",
+    "sdk",
+    "event-tracking"
+  ],
+  "homepage": "https://github.com/your-org/tracker-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/your-org/tracker-sdk/issues"
+  },
   "scripts": {
-    "build": "",
+    "build": "tsc && rollup -c",
     "dev": "",
     "test": "jest",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
     "rollup": "^4.44.2",
     "typescript": "^4.9.5"
   },
-  "author": "Sanket",
-  "license": "Apache 2.0 License",
-  "description": "",
-  "keywords": [
-    "autocapture",
-    "analytics",
-    "tracking",
-    "typescript"
-  ],
   "dependencies": {
     "@snowplow/browser-tracker": "^4.6.3"
   }
