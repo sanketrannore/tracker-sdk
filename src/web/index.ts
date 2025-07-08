@@ -87,7 +87,6 @@ export async function initCruxstack(options: CruxstackConfig): Promise<void> {
   console.log("🚀 [Cruxstack] Initializing SDK with config:", options);
 
   // Initialize Snowplow tracker
-  // push 1
   newTracker("sp1", options.collectorUrl, {
     appId: options.appId,
     postPath: "/com.snowplowanalytics.snowplow/tp2",
