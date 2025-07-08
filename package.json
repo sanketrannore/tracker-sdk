@@ -1,5 +1,5 @@
 {
-  "name": "tracker-sdk",
+  "name": "@sanketrannore/tracker-sdk",
   "version": "1.0.0",
   "description": "New event tracking SDK",
   "main": "dist/web/index.js",
