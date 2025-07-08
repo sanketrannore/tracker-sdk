@@ -1,6 +1,6 @@
 {
   "name": "@sanketrannore/tracker-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "New event tracking SDK",
   "main": "dist/web/index.js",
   "module": "dist/web/index.mjs",
