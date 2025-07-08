@@ -1,0 +1,33 @@
+{
+  "name": "tracker-sdk",
+  "version": "1.0.0",
+  "main": "index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "",
+    "dev": "",
+    "test": "jest",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.1.4",
+    "rollup": "^4.44.2",
+    "typescript": "^4.9.5"
+  },
+  "author": "Sanket",
+  "license": "Apache 2.0 License",
+  "description": "",
+  "keywords": [
+    "autocapture",
+    "analytics",
+    "tracking",
+    "typescript"
+  ],
+  "dependencies": {
+    "@snowplow/browser-tracker": "^4.6.3"
+  }
+}
