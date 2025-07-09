@@ -12,11 +12,14 @@ Auto-captures user activity and button clicks, with plugin support, out-of-the-b
   - [Features](#features)
   - [Installation](#installation)
   - [Basic Installation](#basic-installation)
+  - [Custom Event Tracking](#custom-event-tracking)
   - [Configuration Options](#configuration-options)
   - [Plugins](#plugins)
   - [Example enabling plugins:](#example-enabling-plugins)
   - [API](#api)
+  - [Example: Advanced Usage](#example-advanced-usage)
   - [License](#license)
+  - [Keywords](#keywords)
 
 ---
 
@@ -39,38 +42,36 @@ npm install @sanketrannore/tracker-sdk
 
 ## Basic Installation
 
-<pre>```
-import { initAnalytics } from '@sanketrannore/tracker-sdk';
+```js
+import { initAnalytics } from "@sanketrannore/tracker-sdk";
 
 // Minimal config for web tracking
 const analytics = initAnalytics({
-snowplow: {
-collectorUrl: 'https://your-snowplow-collector.com',
-appId: 'your-app-id'
-// See configuration below for advanced options
-},
-plugins: {
-autoCapture: true,
-buttonClicks: true
-// consent: { ... }
-},
-monitoring: {
-// hyperdxConfig: { ... }
-}
+  snowplow: {
+    collectorUrl: "https://your-snowplow-collector.com",
+    appId: "your-app-id",
+    // See configuration below for advanced options
+  },
+  plugins: {
+    autoCapture: true,
+    buttonClicks: true,
+    // consent: { ... }
+  },
+  monitoring: {
+    // hyperdxConfig: { ... }
+  },
 });
-```</pre>
+```
 
 ## Custom Event Tracking
 
-<pre>
-```
-analytics.trackEvent('purchase', {
-productId: '123',
-value: 49.99,
-currency: 'USD'
+```js
+analytics.trackEvent("purchase", {
+  productId: "123",
+  value: 49.99,
+  currency: "USD",
 });
 ```
-</pre>
 
 ## Configuration Options
 
@@ -85,26 +86,28 @@ currency: 'USD'
 
 Our SDK is plugin-first. Toggle features as needed.
 
-autoCapture:
+`autoCapture`:
 Tracks page views, SPA route changes, and general user activity.
 
-buttonClicks:
+`buttonClicks`:
 Tracks all button click events and enriches with context.
 
-consent:
+`consent`:
 GDPR/CCPA consent plugin (coming soon).
 
 ## Example enabling plugins:
 
-<pre>```plugins: {
-autoCapture: true,
-buttonClicks: true,
-consent: { required: true }
-} ``` </pre>
+```js
+plugins: {
+  autoCapture: true,
+  buttonClicks: true,
+  consent: { required: true }
+}
+```
 
 ## API
 
-initAnalytics(config)
+`initAnalytics(config)`
 Initializes the SDK and returns the tracking API.
 
 Returns
@@ -115,28 +118,36 @@ Returns
 | `optOut()` | Disable all tracking (if consent plugin enabled) |
 | `shutdown()` | Cleanup listeners and stop tracking |
 
- <pre>```## Example: Advanced Usage
+## Example: Advanced Usage
 
- const analytics = initAnalytics({
-snowplow: {
-collectorUrl: 'https://collector.mycompany.com',
-appId: 'audienz-ai'
-},
-plugins: {
-autoCapture: true,
-buttonClicks: true
-}
-}); ``` </pre>
+```js
+const analytics = initAnalytics({
+  snowplow: {
+    collectorUrl: "https://collector.mycompany.com",
+    appId: "audienz-ai",
+  },
+  plugins: {
+    autoCapture: true,
+    buttonClicks: true,
+  },
+});
 
 // Set user ID
-analytics.setUserId('user-789');
+analytics.setUserId("user-789");
 
 // Track a custom event
-analytics.trackEvent('newsletter_signup', { email: 'user@email.com' });
+analytics.trackEvent("newsletter_signup", { email: "user@email.com" });
 
 // Opt out (if consent enabled)
 analytics.optOut();
+```
 
 ## License
 
 Apache License 2.0
+
+---
+
+## Keywords
+
+`tracking` `web analytics` `events` `open source`
