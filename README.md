@@ -1,20 +1,33 @@
 # @sanketrannore/tracker-sdk
 
-Event tracking SDK for web applications.  
-Includes auto-capture, button click tracking, and is designed to be modular, extensible, and privacy-aware.  
-Built for the [audienz.ai](https://audienz.ai) platform, but can be used in any modern web project.
+A modern, modular, privacy-aware JavaScript SDK for web analytics.  
+Auto-captures user activity and button clicks, with plugin support, out-of-the-box event enrichment, and easy integration with [audienz.ai](https://audienz.ai) or any web app.
+
+---
+
+## Table of Contents
+
+- [@sanketrannore/tracker-sdk](#sanketrannoretracker-sdk)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Basic Installation](#basic-installation)
+  - [Configuration Options](#configuration-options)
+  - [Plugins](#plugins)
+  - [Example enabling plugins:](#example-enabling-plugins)
+  - [API](#api)
+  - [License](#license)
 
 ---
 
 ## Features
 
-- **Automatic event capture:** Tracks page views, SPA route changes, and user activity
-- **Button click tracking:** Automatically captures button click events (with enrichment)
-- **Snowplow integration:** Events are enriched and forwarded using the Snowplow tracker
-- **Plugin-based architecture:** Easily add or remove features (e.g., consent management, custom events)
-- **TypeScript-first:** Full type safety and rich autocomplete in supported IDEs
-- **Supports monitoring:** HyperDX integration for error/performance monitoring
-- **Open-source, Apache 2.0 License**
+- Automatic page view and button click tracking
+- Snowplow-based event enrichment (user, device, session, geo, etc.)
+- Pluggable architecture for custom analytics
+- Consent and privacy controls (plugin)
+- TypeScript types and ESM/CJS compatibility
+- Monitoring integration (HyperDX)
 
 ---
 
@@ -24,101 +37,106 @@ Built for the [audienz.ai](https://audienz.ai) platform, but can be used in any 
 npm install @sanketrannore/tracker-sdk
 ```
 
-Snowplow JavaScript Trackers Overview
+## Basic Installation
 
+<pre>```
 import { initAnalytics } from '@sanketrannore/tracker-sdk';
 
+// Minimal config for web tracking
 const analytics = initAnalytics({
 snowplow: {
-collectorUrl: 'https://your-collector.com', // Snowplow collector endpoint
-appId: 'audienz-web', // Your app ID
-// ...other Snowplow config options
-},
-monitoring: {
-// Optional: HyperDX or custom monitoring config
+collectorUrl: 'https://your-snowplow-collector.com',
+appId: 'your-app-id'
+// See configuration below for advanced options
 },
 plugins: {
 autoCapture: true,
-buttonClicks: true,
-consent: false // or provide options if using consent management
+buttonClicks: true
+// consent: { ... }
+},
+monitoring: {
+// hyperdxConfig: { ... }
 }
 });
+```</pre>
 
-// Optionally, track custom events:
-analytics.trackEvent('custom_event', { foo: 'bar' });
+## Custom Event Tracking
 
-API Reference
-initAnalytics(config): SDKApi
-config.snowplow: Snowplow collector and app configuration
+<pre>
+```
+analytics.trackEvent('purchase', {
+productId: '123',
+value: 49.99,
+currency: 'USD'
+});
+```
+</pre>
 
-config.monitoring: Monitoring/HyperDX integration (optional)
+## Configuration Options
 
-config.plugins: Enable/disable core tracking features or plugins
+| Option         | Type   | Description                                    |
+| -------------- | ------ | ---------------------------------------------- |
+| `collectorUrl` | string | Your Snowplow collector endpoint               |
+| `appId`        | string | Unique app identifier                          |
+| `plugins`      | object | Which plugins/features to enable               |
+| `monitoring`   | object | HyperDX or custom monitoring config (optional) |
 
-Returns:
-An SDK API object:
+## Plugins
 
-trackEvent(eventName, eventProps) — Manually track custom events
+Our SDK is plugin-first. Toggle features as needed.
 
-Plugins
-Plugins are modular tracking features you can enable or disable.
+autoCapture:
+Tracks page views, SPA route changes, and general user activity.
 
-autoCapture: Tracks page views, activity, and route changes automatically
+buttonClicks:
+Tracks all button click events and enriches with context.
 
-buttonClicks: Tracks button click events sitewide
+consent:
+GDPR/CCPA consent plugin (coming soon).
 
-consent: Handles privacy consent (optional, coming soon)
+## Example enabling plugins:
 
-Project Structure
+<pre>```plugins: {
+autoCapture: true,
+buttonClicks: true,
+consent: { required: true }
+} ``` </pre>
 
-src/
-common/ # Types, utilities, constants
-libraries/ # Core logic: Snowplow wrapper, emitter, monitoring
-plugins/
-tracker/ # Tracking plugins: autoCapture, buttonClicks, etc.
-consent/ # Consent management plugin
-web/ # Entry point for SDK
-api-docs/ # Detailed API docs
-dist/ # Built output (after build)
+## API
 
-Development
-Clone the repo:
+initAnalytics(config)
+Initializes the SDK and returns the tracking API.
 
-sh
-Copy
-Edit
-git clone https://github.com/sanketrannore/tracker-sdk.git
-cd tracker-sdk
-Install dependencies:
+Returns
+| Method | Description |
+| ------------------------- | ------------------------------------------------ |
+| `trackEvent(name, props)` | Track custom events |
+| `setUserId(userId)` | Set or update the current user ID |
+| `optOut()` | Disable all tracking (if consent plugin enabled) |
+| `shutdown()` | Cleanup listeners and stop tracking |
 
-sh
-Copy
-Edit
-npm install
-Build:
+ <pre>```## Example: Advanced Usage
 
-sh
-Copy
-Edit
-npm run build
-Run tests:
-(coming soon, Jest setup in progress)
+ const analytics = initAnalytics({
+snowplow: {
+collectorUrl: 'https://collector.mycompany.com',
+appId: 'audienz-ai'
+},
+plugins: {
+autoCapture: true,
+buttonClicks: true
+}
+}); ``` </pre>
 
-Local test project:
-See /api-docs/web.md for usage examples.
+// Set user ID
+analytics.setUserId('user-789');
 
-Publishing
-Update version in package.json (npm version patch)
+// Track a custom event
+analytics.trackEvent('newsletter_signup', { email: 'user@email.com' });
 
-Publish:
+// Opt out (if consent enabled)
+analytics.optOut();
 
-sh
-Copy
-Edit
-npm publish --access public
-License
-Apache 2.0
+## License
 
-Contributing
-Contributions and feedback are welcome!
-Open issues or PRs for bugfixes, new plugins, or improvements
+Apache License 2.0
