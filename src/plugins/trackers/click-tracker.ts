@@ -16,6 +16,7 @@
 import type { AutocaptureConfig, AutocaptureEvent, ElementInfo } from '../../common/types';
 import { EventType } from '../../common/types';
 import { getElementInfo, debugLog } from '../../common/utils';
+import { SafeBrowser, isBrowser, logEnvironmentInfo } from '../../common/environment';
 
 // Global state
 let isActive = false;
@@ -38,8 +39,14 @@ export function initClickTracking(config: AutocaptureConfig): void {
     return;
   }
 
+  // Check if click tracking is supported in this environment
+  if (!SafeBrowser.supportsClickTracking()) {
+    console.log('⚠️ [Cruxstack] Click tracking not supported in this environment (Node.js)');
+    return;
+  }
+
   // Add global click listener
-  document.addEventListener('click', handleButtonClick, true);
+  SafeBrowser.addEventListener('click', handleButtonClick, true);
   isActive = true;
   
   debugLog('Click tracking initialized', config);
@@ -52,7 +59,7 @@ export function initClickTracking(config: AutocaptureConfig): void {
 export function stopClickTracking(): void {
   if (!isActive) return;
   
-  document.removeEventListener('click', handleButtonClick, true);
+  SafeBrowser.removeEventListener('click', handleButtonClick, true);
   isActive = false;
   eventDispatcher = null;
   
@@ -85,8 +92,9 @@ export function isClickTrackingActive(): boolean {
  * @param event - DOM click event
  * @private
  */
-function handleButtonClick(event: MouseEvent): void {
-  const target = event.target as Element;
+function handleButtonClick(event: Event): void {
+  const mouseEvent = event as MouseEvent;
+  const target = mouseEvent.target as Element;
   
   // Only track actual button elements (not all clickable elements)
   if (!isButtonElement(target)) {
@@ -94,7 +102,7 @@ function handleButtonClick(event: MouseEvent): void {
   }
   
   try {
-    captureButtonClickData(event, target);
+    captureButtonClickData(mouseEvent, target);
   } catch (error) {
     console.error('❌ [Cruxstack] Error capturing button click:', error);
   }
@@ -276,12 +284,15 @@ function extractContextData(element: HTMLButtonElement | HTMLInputElement) {
  * @private
  */
 function extractPageData() {
+  const location = SafeBrowser.getLocation();
+  const doc = SafeBrowser.getDocument();
+  
   return {
-    pageUrl: window.location.href,
-    pageTitle: document.title,
-    pageHost: window.location.host,
-    pageProtocol: window.location.protocol,
-    referrer: document.referrer || undefined
+    pageUrl: location.href,
+    pageTitle: doc.title,
+    pageHost: location.host,
+    pageProtocol: location.protocol,
+    referrer: doc.referrer || undefined
   };
 }
 
