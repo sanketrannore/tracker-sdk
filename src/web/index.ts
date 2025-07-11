@@ -2,7 +2,7 @@
  * Cruxstack Autocapture SDK
  * 
  * A comprehensive analytics SDK that automatically captures user interactions
- * and page views, sending rich data to Snowplow collectors.
+ * and page views, sending rich data to collector.
  * 
  * Features:
  * - Automatic button click tracking with comprehensive data
@@ -15,7 +15,6 @@
  * import { initCruxstack } from 'cruxstack-sdk';
  * 
  * initCruxstack({
- *   collectorUrl: 'https://your-collector.com',
  *   appId: 'your-app',
  *   userId: 'user123',
  *   autoCapture: true
@@ -23,57 +22,37 @@
  * ```
  */
 
-import { 
-  newTracker, 
-  trackSelfDescribingEvent, 
-  setUserId 
+import {
+  setUserId
 } from '@snowplow/browser-tracker';
 
-import type { AutocaptureConfig, AutocaptureEvent } from '../common/types';
-import { EventType } from '../common/types';
-import { shouldSampleEvent, isEventLimitReached, debugLog, generateEventId } from '../common/utils';
-import { logEnvironmentInfo, isBrowser, isNode } from '../common/environment';
+import { isBrowser, logEnvironmentInfo } from '../common/environment';
+import type { AutocaptureConfig, CruxstackConfig } from '../common/types';
+import { sdkLog } from '../common/utils';
 
 // Import tracker modules
-import { 
-  initClickTracking, 
-  stopClickTracking, 
-  setClickEventDispatcher,
-  isClickTrackingActive
+import {
+  isClickTrackingActive,
+  stopClickTracking
 } from '../plugins/trackers/click-tracker';
 
-import { 
-  initPageTracking, 
-  stopPageTracking, 
-  setPageEventDispatcher,
-  trackAutocapturePageView,
-  trackCurrentPageTime,
-  isPageTrackingActive
+import {
+  isPageTrackingActive,
+  stopPageTracking
 } from '../plugins/trackers/page-tracker';
 
-/**
- * Main SDK Configuration Interface
- */
-export interface CruxstackConfig {
-  /** Snowplow collector endpoint URL (required) */
-  collectorUrl: string;
-  /** Application identifier (required) */
-  appId: string;
-  /** User identifier (optional) */
-  userId?: string;
-  /** Enable/disable automatic event capture (optional, defaults to true) */
-  autoCapture?: boolean;
-}
+import { initEmitter } from '../libraries/emitter';
+import { initializeAutocapture } from '../plugins/trackers/autoCapture';
 
 // Global SDK state
 let isEnabled = false;
 let config: AutocaptureConfig = {};
-let eventCount = 0;
+let debug = false;
 
 /**
  * Initialize Cruxstack SDK
  * 
- * Sets up Snowplow tracker and initializes autocapture modules.
+ * Sets up tracker and initializes autocapture modules.
  * Call this once when your application loads.
  * 
  * @param options - SDK configuration options
@@ -81,7 +60,6 @@ let eventCount = 0;
  * @example
  * ```typescript
  * await initCruxstack({
- *   collectorUrl: 'https://collector.example.com',
  *   appId: 'my-app',
  *   userId: 'user123',
  *   autoCapture: true
@@ -89,228 +67,37 @@ let eventCount = 0;
  * ```
  */
 export async function initCruxstack(options: CruxstackConfig): Promise<void> {
-  console.log('🚀 [Cruxstack] Initializing SDK with config:', options);
+  debug = options.debugLog === true;
+  sdkLog(debug, '🚀 [Cruxstack] Initializing SDK with config:', options);
   
   // Log environment information
   logEnvironmentInfo();
   
-  // Initialize Snowplow tracker (works in both browser and Node.js)
-  newTracker('sp1', options.collectorUrl, {
-    appId: options.appId,
-    postPath: '/com.snowplowanalytics.snowplow/tp2',
-    platform: isBrowser() ? 'web' : 'srv', // Use 'srv' for server-side/Node.js
-  });
-  console.log('✅ [Cruxstack] Snowplow tracker initialized');
+  // Initialize emitter
+  await initEmitter(options.appId, debug);
   
   // Set user ID if provided
   if (options.userId) {
     setUserId(options.userId);
-    console.log('✅ [Cruxstack] User ID set:', options.userId);
+    sdkLog(debug, '✅ [Cruxstack] User ID set:', options.userId);
   }
   
   // Initialize autocapture (defaults to enabled)
-  const shouldAutoCapture = options.autoCapture !== false;
+  isEnabled = options.autoCapture !== false;
   
-  if (shouldAutoCapture) {
+  if (isEnabled) {
     if (isBrowser()) {
-      console.log('✅ [Cruxstack] AutoCapture enabled - initializing browser trackers');
-      await initializeAutocapture();
+      sdkLog(debug, '✅ [Cruxstack] AutoCapture enabled - initializing browser trackers');
+      await initializeAutocapture(config, isEnabled, debug);
     } else {
-      console.log('🟢 [Cruxstack] AutoCapture enabled in Node.js - limited tracking available');
-      await initializeAutocapture();
+      sdkLog(debug, '🟢 [Cruxstack] AutoCapture enabled in Node.js - limited tracking available');
+      await initializeAutocapture(config, isEnabled, debug);
     }
   } else {
-    console.log('❌ [Cruxstack] AutoCapture disabled - no tracking will occur');
+    sdkLog(debug, '❌ [Cruxstack] AutoCapture disabled - no tracking will occur');
   }
   
-  console.log('🎉 [Cruxstack] SDK initialization complete');
-}
-
-/**
- * Initialize autocapture modules with default configuration
- * @private
- */
-async function initializeAutocapture(): Promise<void> {
-  // Set sensible defaults for autocapture
-  config = {
-    clicks: true,
-    pageViews: true,
-    debug: false,
-    samplingRate: 1,
-    maxEventsPerSession: 1000
-  };
-  
-  // Enable tracking
-  isEnabled = true;
-  eventCount = 0;
-  
-  // Connect event handlers
-  setClickEventDispatcher(processAndSendEvent);
-  setPageEventDispatcher(processAndSendEvent);
-  
-  // Start tracking modules
-  initClickTracking(config);
-  initPageTracking(config);
-  
-  debugLog('Autocapture initialized with configuration:', config);
-}
-
-/**
- * Process and send events to Snowplow
- * Handles validation, sampling, limits, and dispatch
- * @private
- */
-function processAndSendEvent(event: AutocaptureEvent): void {
-  // Early returns for disabled tracking or limits
-  if (!isEnabled) return;
-  if (isEventLimitReached(eventCount, config)) {
-    debugLog('Event limit reached', config);
-    return;
-  }
-  if (!shouldSampleEvent(config)) {
-    debugLog('Event sampled out', config);
-    return;
-  }
-  
-  // Add unique event ID
-  const eventWithId = { ...event, id: generateEventId() };
-  
-  try {
-    sendEventToSnowplow(eventWithId);
-    eventCount++;
-  } catch (error) {
-    debugLog('Error sending event', config, error);
-  }
-}
-
-/**
- * Send events to Snowplow with comprehensive data
- * @private
- */
-function sendEventToSnowplow(event: AutocaptureEvent): void {
-  console.log('📤 [Cruxstack] Processing event:', event.type);
-  
-  switch (event.type) {
-    case EventType.PAGE_VIEW:
-      sendPageViewEvent(event);
-      break;
-      
-    case EventType.CLICK:
-      sendButtonClickEvent(event);
-      break;
-      
-    default:
-      console.log('❓ [Cruxstack] Unknown event type:', event.type);
-  }
-}
-
-/**
- * Send page view event with all captured data
- * @private
- */
-function sendPageViewEvent(event: AutocaptureEvent): void {
-  const timeSpentInfo = event.eventData?.previousPageTimeSpent;
-  
-  // Log comprehensive page view data
-  console.log('📄 [Cruxstack] PAGE_VIEW Event - Full Data:', {
-    type: event.type,
-    timestamp: new Date(event.timestamp).toISOString(),
-    routeInfo: event.routeInfo,
-    previousPageTimeSpent: timeSpentInfo ? {
-      ...timeSpentInfo,
-      summary: `Spent ${timeSpentInfo.timeSpentFormatted} on previous page (${timeSpentInfo.timePeriod})`
-    } : 'No previous page data',
-    pageInfo: {
-      title: event.eventData?.pageTitle,
-      url: event.eventData?.pageUrl,
-      host: event.eventData?.pageHost,
-      protocol: event.eventData?.pageProtocol,
-      referrer: event.eventData?.referrer
-    },
-    browserInfo: {
-      userAgent: event.eventData?.userAgent,
-      language: event.eventData?.language,
-      platform: event.eventData?.platform,
-      onLine: event.eventData?.onLine
-    },
-    displayInfo: event.eventData?.viewport,
-    performance: event.eventData?.performanceTiming,
-    connection: event.eventData?.connection,
-    metaTags: event.eventData?.metaTags
-  });
-  
-  // Send to Snowplow as self-describing event
-  trackSelfDescribingEvent({
-    event: {
-      schema: 'iglu:com.cruxstack/page_view/jsonschema/1-0-0',
-      data: {
-        ...event.eventData,
-        routeInfo: event.routeInfo,
-        capturedAt: new Date(event.timestamp).toISOString(),
-        eventId: event.id
-      }
-    }
-  }, ['sp1']);
-  
-  console.log('✅ [Cruxstack] PAGE_VIEW with FULL DATA sent to Snowplow');
-}
-
-/**
- * Send button click event with all captured data
- * @private
- */
-function sendButtonClickEvent(event: AutocaptureEvent): void {
-  // Log comprehensive button click data
-  console.log('👆 [Cruxstack] BUTTON_CLICK Event - Full Data:', {
-    type: event.type,
-    timestamp: new Date(event.timestamp).toISOString(),
-    buttonDetails: {
-      id: event.eventData?.buttonId,
-      name: event.eventData?.buttonName,
-      value: event.eventData?.buttonValue,
-      type: event.eventData?.buttonType,
-      text: event.eventData?.buttonText,
-      disabled: event.eventData?.buttonDisabled
-    },
-    styling: {
-      className: event.eventData?.className,
-      classList: event.eventData?.classList
-    },
-    position: event.eventData?.position,
-    mouseDetails: {
-      button: event.eventData?.mouseButton,
-      coordinates: event.eventData?.clickCoordinates
-    },
-    dataAttributes: event.eventData?.dataAttributes,
-    formContext: event.eventData?.formContext,
-    domInfo: {
-      tagName: event.eventData?.targetTagName,
-      parentElement: event.eventData?.parentElement,
-      elementPath: event.eventData?.elementPath,
-      isVisible: event.eventData?.isVisible
-    },
-    pageContext: {
-      url: event.eventData?.pageUrl,
-      title: event.eventData?.pageTitle,
-      referrer: event.eventData?.referrer
-    },
-    elementInfo: event.elementInfo
-  });
-  
-  // Send to Snowplow as self-describing event
-  trackSelfDescribingEvent({
-    event: {
-      schema: 'iglu:com.cruxstack/button_click/jsonschema/1-0-0',
-      data: {
-        ...event.eventData,
-        elementInfo: event.elementInfo,
-        capturedAt: new Date(event.timestamp).toISOString(),
-        eventId: event.id
-      }
-    }
-  }, ['sp1']);
-  
-  console.log('✅ [Cruxstack] BUTTON_CLICK with FULL DATA sent to Snowplow');
+  sdkLog(debug, '🎉 [Cruxstack] SDK initialization complete');
 }
 
 /**
@@ -325,7 +112,7 @@ export function stopCruxstack(): void {
   isEnabled = false;
   stopClickTracking();
   stopPageTracking();
-  debugLog('Autocapture stopped', config);
+  sdkLog(debug, 'Autocapture stopped', config);
 }
 
 /**
@@ -336,14 +123,14 @@ export function stopCruxstack(): void {
  * @example
  * ```typescript
  * const status = getCruxstackStatus();
- * console.log('Events captured:', status.eventCount);
  * console.log('Tracking active:', status.isEnabled);
+ * console.log('Click tracking:', status.modules.clicks);
+ * console.log('Page tracking:', status.modules.pages);
  * ```
  */
 export function getCruxstackStatus() {
   return {
     isEnabled,
-    eventCount,
     config,
     modules: {
       clicks: isClickTrackingActive(),
@@ -352,11 +139,4 @@ export function getCruxstackStatus() {
   };
 }
 
-// Re-export useful functions for manual tracking
-export { trackAutocapturePageView, trackCurrentPageTime };
 
-// Re-export types for TypeScript users
-export type { AutocaptureEvent, AutocaptureConfig } from '../common/types';
-
-// Re-export environment utilities for advanced users
-export { isBrowser, isNode, logEnvironmentInfo } from '../common/environment';
