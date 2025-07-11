@@ -26,7 +26,7 @@ export interface AutocaptureConfig {
   /** Enable/disable page view tracking */
   pageViews?: boolean;
   /** Enable debug logging to console */
-  debug?: boolean;
+  debugLog?: boolean;
   /** Sampling rate (0-1) for event capture */
   samplingRate?: number;
   /** Maximum events per session before stopping */
@@ -316,4 +316,20 @@ export interface EventData {
     entryTime: number;
     exitTime: number;
   };
+} 
+
+/**
+ * Main SDK Configuration Interface
+ * 
+ * Controls the initialization and behavior of the Cruxstack SDK.
+ */
+export interface CruxstackConfig {
+  /** Application identifier (required) */
+  appId: string;
+  /** User identifier (optional) */
+  userId?: string;
+  /** Enable/disable automatic event capture (optional, defaults to true) */
+  autoCapture?: boolean;
+  /** Enable debug logging to console (optional, defaults to false) */
+  debugLog?: boolean;
 } 

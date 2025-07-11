@@ -51,7 +51,7 @@ export function isEventLimitReached(currentCount: number, config: AutocaptureCon
  * @param data - Optional additional data to log
  */
 export function debugLog(message: string, config: AutocaptureConfig, data?: any): void {
-  if (!config.debug) return;
+  if (!config.debugLog) return;
   
   if (data) {
     console.log(`🔍 [Cruxstack Debug] ${message}`, data);
@@ -176,4 +176,14 @@ export function getCurrentRouteInfo(): { pathname: string; search: string; hash:
     search: window.location.search,
     hash: window.location.hash
   };
+} 
+
+/**
+ * Global SDK logger utility
+ * Logs to console only if debugLog is true
+ */
+export function sdkLog(debugLog: boolean, ...args: any[]) {
+  if (debugLog) {
+    console.log(...args);
+  }
 } 

@@ -13,10 +13,10 @@
  * Supports both initial page loads and route changes in SPAs.
  */
 
+import { SafeBrowser, isBrowser, logEnvironmentInfo } from '../../common/environment';
 import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
-import { debugLog } from '../../common/utils';
-import { SafeBrowser, isBrowser, logEnvironmentInfo } from '../../common/environment';
+import { sdkLog } from '../../common/utils';
 
 // Global state
 let isActive = false;
@@ -40,12 +40,12 @@ let lastProcessedUrl = '';
  */
 export function initPageTracking(trackingConfig: AutocaptureConfig): void {
   if (isActive) {
-    debugLog('Page tracking already active', trackingConfig);
+    sdkLog(false, 'Page tracking already active', trackingConfig);
     return;
   }
   
   if (!trackingConfig.pageViews) {
-    debugLog('Page tracking disabled in config', trackingConfig);
+    sdkLog(false, 'Page tracking disabled in config', trackingConfig);
     return;
   }
 
@@ -54,7 +54,7 @@ export function initPageTracking(trackingConfig: AutocaptureConfig): void {
 
   // Check if page tracking is supported in this environment
   if (!SafeBrowser.supportsPageTracking()) {
-    console.log('⚠️ [Cruxstack] Page tracking not supported in this environment (Node.js)');
+    sdkLog(false, '⚠️ [Cruxstack] Page tracking not supported in this environment (Node.js)');
     return;
   }
 
@@ -67,7 +67,7 @@ export function initPageTracking(trackingConfig: AutocaptureConfig): void {
   // Set up route change detection
   setupRouteChangeDetection();
   
-  debugLog('Page tracking initialized', config);
+  sdkLog(false, 'Page tracking initialized', config);
 }
 
 /**
@@ -86,7 +86,7 @@ export function stopPageTracking(): void {
   isActive = false;
   eventDispatcher = null;
   
-  console.log('📄 [Cruxstack] Page tracking stopped');
+  sdkLog(false, '📄 [Cruxstack] Page tracking stopped');
 }
 
 /**
@@ -125,14 +125,14 @@ export function trackAutocapturePageView(): void {
   
   // Prevent duplicate events for the same URL
   if (isProcessingPageView || newUrl === lastProcessedUrl) {
-    debugLog('Skipping duplicate page view event for URL: ' + newUrl, config);
+    sdkLog(false, 'Skipping duplicate page view event for URL: ' + newUrl, config);
     return;
   }
   
   isProcessingPageView = true;
   
   try {
-    console.log('📄 [Cruxstack] Processing page view:', currentUrl, '->', newUrl);
+    sdkLog(false, '📄 [Cruxstack] Processing page view:', currentUrl, '->', newUrl);
     
     // Capture the route info before updating state
     const routeInfo = {
@@ -184,7 +184,7 @@ export function trackCurrentPageTime(): void {
  * @private
  */
 function trackInitialPageView(): void {
-  console.log('📄 [Cruxstack] Tracking initial page view');
+  sdkLog(false, '📄 [Cruxstack] Tracking initial page view');
   
   // In browser: wait for page to fully load to get accurate performance data
   if (isBrowser()) {
@@ -208,7 +208,7 @@ function trackInitialPageView(): void {
 function setupRouteChangeDetection(): void {
   // Only set up route detection in browser environments
   if (!SafeBrowser.supportsHistoryAPI()) {
-    debugLog('History API not supported, skipping route change detection', config);
+    sdkLog(false, 'History API not supported, skipping route change detection', config);
     return;
   }
 
@@ -240,7 +240,7 @@ function setupRouteChangeDetection(): void {
 function cleanupRouteChangeDetection(): void {
   // Restore original history methods would require storing references
   // For now, just log cleanup
-  debugLog('Route change detection cleaned up', config);
+  sdkLog(false, 'Route change detection cleaned up', config);
 }
 
 /**
@@ -251,7 +251,7 @@ function handleRouteChange(): void {
   const newUrl = SafeBrowser.getLocation().href;
   
   if (newUrl !== currentUrl && !isProcessingPageView) {
-    console.log('📄 [Cruxstack] Route change detected:', currentUrl, '->', newUrl);
+    sdkLog(false, '📄 [Cruxstack] Route change detected:', currentUrl, '->', newUrl);
     trackAutocapturePageView();
   }
 }

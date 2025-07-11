@@ -13,10 +13,10 @@
  * Only tracks actual button elements, not all clickable elements.
  */
 
-import type { AutocaptureConfig, AutocaptureEvent, ElementInfo } from '../../common/types';
+import { SafeBrowser } from '../../common/environment';
+import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
-import { getElementInfo, debugLog } from '../../common/utils';
-import { SafeBrowser, isBrowser, logEnvironmentInfo } from '../../common/environment';
+import { debugLog, getElementInfo } from '../../common/utils';
 
 // Global state
 let isActive = false;
