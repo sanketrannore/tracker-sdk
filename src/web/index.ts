@@ -26,20 +26,9 @@ import {
   setUserId
 } from '@snowplow/browser-tracker';
 
-import { isBrowser, logEnvironmentInfo } from '../common/environment';
+import { isBrowser } from '../common/environment';
 import type { AutocaptureConfig, CruxstackConfig } from '../common/types';
 import { sdkLog } from '../common/utils';
-
-// Import tracker modules
-import {
-  isClickTrackingActive,
-  stopClickTracking
-} from '../plugins/trackers/click-tracker';
-
-import {
-  isPageTrackingActive,
-  stopPageTracking
-} from '../plugins/trackers/page-tracker';
 
 import { initEmitter } from '../libraries/emitter';
 import { initializeAutocapture } from '../plugins/trackers/autoCapture';
@@ -70,8 +59,11 @@ export async function initCruxstack(options: CruxstackConfig): Promise<void> {
   debug = options.debugLog === true;
   sdkLog(debug, '🚀 [Cruxstack] Initializing SDK with config:', options);
   
-  // Log environment information
-  logEnvironmentInfo();
+  // Check if we're in a browser environment
+  if (!isBrowser()) {
+    console.error('❌ [Cruxstack] Browser environment required');
+    return;
+  }
   
   // Initialize emitter
   await initEmitter(options.appId, debug);
@@ -86,57 +78,13 @@ export async function initCruxstack(options: CruxstackConfig): Promise<void> {
   isEnabled = options.autoCapture !== false;
   
   if (isEnabled) {
-    if (isBrowser()) {
-      sdkLog(debug, '✅ [Cruxstack] AutoCapture enabled - initializing browser trackers');
-      await initializeAutocapture(config, isEnabled, debug);
-    } else {
-      sdkLog(debug, '🟢 [Cruxstack] AutoCapture enabled in Node.js - limited tracking available');
-      await initializeAutocapture(config, isEnabled, debug);
-    }
+    sdkLog(debug, '✅ [Cruxstack] AutoCapture enabled - initializing browser trackers');
+    await initializeAutocapture(config, isEnabled, debug);
   } else {
     sdkLog(debug, '❌ [Cruxstack] AutoCapture disabled - no tracking will occur');
   }
   
   sdkLog(debug, '🎉 [Cruxstack] SDK initialization complete');
-}
-
-/**
- * Stop all tracking and clean up resources
- * 
- * @example
- * ```typescript
- * stopCruxstack(); // Disable all tracking
- * ```
- */
-export function stopCruxstack(): void {
-  isEnabled = false;
-  stopClickTracking();
-  stopPageTracking();
-  sdkLog(debug, 'Autocapture stopped', config);
-}
-
-/**
- * Get current SDK status and statistics
- * 
- * @returns Current state of the SDK
- * 
- * @example
- * ```typescript
- * const status = getCruxstackStatus();
- * console.log('Tracking active:', status.isEnabled);
- * console.log('Click tracking:', status.modules.clicks);
- * console.log('Page tracking:', status.modules.pages);
- * ```
- */
-export function getCruxstackStatus() {
-  return {
-    isEnabled,
-    config,
-    modules: {
-      clicks: isClickTrackingActive(),
-      pages: isPageTrackingActive()
-    }
-  };
 }
 
 

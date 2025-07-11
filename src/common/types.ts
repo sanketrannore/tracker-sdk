@@ -21,11 +21,6 @@ export enum EventType {
  * Controls which events are captured and how the SDK behaves.
  */
 export interface AutocaptureConfig {
-  /** Enable/disable button click tracking */
-  clicks?: boolean;
-  /** Enable/disable page view tracking */
-  pageViews?: boolean;
-  /** Enable debug logging to console */
   debugLog?: boolean;
   /** Sampling rate (0-1) for event capture */
   samplingRate?: number;

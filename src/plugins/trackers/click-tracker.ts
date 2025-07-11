@@ -13,10 +13,10 @@
  * Only tracks actual button elements, not all clickable elements.
  */
 
-import { SafeBrowser } from '../../common/environment';
+import { SafeBrowser, isBrowser } from '../../common/environment';
 import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
-import { debugLog, getElementInfo } from '../../common/utils';
+import { getElementInfo } from '../../common/utils';
 
 // Global state
 let isActive = false;
@@ -30,18 +30,12 @@ let eventDispatcher: ((event: AutocaptureEvent) => void) | null = null;
  */
 export function initClickTracking(config: AutocaptureConfig): void {
   if (isActive) {
-    debugLog('Click tracking already active', config);
     return;
   }
   
-  if (!config.clicks) {
-    debugLog('Click tracking disabled in config', config);
-    return;
-  }
-
-  // Check if click tracking is supported in this environment
-  if (!SafeBrowser.supportsClickTracking()) {
-    console.log('⚠️ [Cruxstack] Click tracking not supported in this environment (Node.js)');
+  // Check if we're in a browser environment
+  if (!isBrowser()) {
+    console.log('❌ [Cruxstack] Browser environment required for click tracking');
     return;
   }
 
@@ -49,7 +43,6 @@ export function initClickTracking(config: AutocaptureConfig): void {
   SafeBrowser.addEventListener('click', handleButtonClick, true);
   isActive = true;
   
-  debugLog('Click tracking initialized', config);
 }
 
 /**

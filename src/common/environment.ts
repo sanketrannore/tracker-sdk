@@ -1,7 +1,8 @@
 /**
- * Environment Detection and Safe Browser API Wrappers
+ * Environment Detection and Browser API Wrappers
  * 
- * Provides environment-safe access to browser APIs with Node.js fallbacks
+ * Provides browser-only access to browser APIs.
+ * If not in browser environment, functions will return early or throw errors.
  */
 
 /**
@@ -14,48 +15,20 @@ export function isBrowser(): boolean {
 }
 
 /**
- * Detect if we're running in Node.js environment
- */
-export function isNode(): boolean {
-  return typeof process !== 'undefined' && 
-         process.versions != null && 
-         process.versions.node != null;
-}
-
-/**
- * Safe browser API wrappers with Node.js fallbacks
+ * Browser API wrappers - browser only
  */
 export const SafeBrowser = {
   // Window-related APIs
   getLocation: () => {
     if (!isBrowser()) {
-      return {
-        href: 'http://localhost:3000',
-        host: 'localhost:3000',
-        hostname: 'localhost',
-        protocol: 'http:',
-        port: '3000',
-        pathname: '/',
-        search: '',
-        hash: ''
-      };
+      throw new Error('Browser environment required');
     }
     return window.location;
   },
 
   getViewport: () => {
     if (!isBrowser()) {
-      return {
-        width: 1920,
-        height: 1080,
-        availWidth: 1920,
-        availHeight: 1040,
-        screenWidth: 1920,
-        screenHeight: 1080,
-        colorDepth: 24,
-        pixelDepth: 24,
-        devicePixelRatio: 1
-      };
+      throw new Error('Browser environment required');
     }
     return {
       width: window.innerWidth,
@@ -73,15 +46,7 @@ export const SafeBrowser = {
   // Document-related APIs
   getDocument: () => {
     if (!isBrowser()) {
-      return {
-        title: 'Node.js Application',
-        characterSet: 'UTF-8',
-        compatMode: 'CSS1Compat',
-        visibilityState: 'visible',
-        hidden: false,
-        readyState: 'complete',
-        referrer: ''
-      };
+      throw new Error('Browser environment required');
     }
     return {
       title: document.title,
@@ -96,7 +61,7 @@ export const SafeBrowser = {
 
   getMetaTags: () => {
     if (!isBrowser()) {
-      return {};
+      throw new Error('Browser environment required');
     }
     
     const metaTags: Record<string, string> = {};
@@ -118,15 +83,7 @@ export const SafeBrowser = {
   // Navigator-related APIs
   getNavigator: () => {
     if (!isBrowser()) {
-      return {
-        userAgent: 'Node.js/18.0.0 (linux; x64)',
-        language: 'en-US',
-        languages: ['en-US', 'en'],
-        platform: process?.platform || 'linux',
-        cookieEnabled: false,
-        onLine: true,
-        doNotTrack: undefined
-      };
+      throw new Error('Browser environment required');
     }
     return {
       userAgent: navigator.userAgent,
@@ -142,36 +99,7 @@ export const SafeBrowser = {
   // Performance APIs
   getPerformanceTiming: () => {
     if (!isBrowser()) {
-      // Return mock performance data for Node.js
-      const now = Date.now();
-      return {
-        navigationStart: now - 1000,
-        unloadEventStart: 0,
-        unloadEventEnd: 0,
-        redirectStart: 0,
-        redirectEnd: 0,
-        fetchStart: now - 800,
-        domainLookupStart: now - 750,
-        domainLookupEnd: now - 700,
-        connectStart: now - 650,
-        connectEnd: now - 600,
-        secureConnectionStart: now - 580,
-        requestStart: now - 500,
-        responseStart: now - 300,
-        responseEnd: now - 200,
-        domLoading: now - 150,
-        domInteractive: now - 100,
-        domContentLoadedEventStart: now - 80,
-        domContentLoadedEventEnd: now - 70,
-        domComplete: now - 50,
-        loadEventStart: now - 30,
-        loadEventEnd: now - 10,
-        totalLoadTime: 990,
-        domReadyTime: 920,
-        responseTime: 200,
-        navigationType: 0,
-        redirectCount: 0
-      };
+      throw new Error('Browser environment required');
     }
     
     const timing = performance.timing;
@@ -210,7 +138,7 @@ export const SafeBrowser = {
   // Network connection API
   getConnection: () => {
     if (!isBrowser()) {
-      return undefined;
+      throw new Error('Browser environment required');
     }
     
     const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
@@ -228,10 +156,14 @@ export const SafeBrowser = {
 
   // Timezone information
   getTimezone: () => {
+    if (!isBrowser()) {
+      throw new Error('Browser environment required');
+    }
+    
     const now = new Date();
     
     return {
-      timeZone: isBrowser() ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       timeZoneOffset: now.getTimezoneOffset(),
       timestamp: now.toISOString(),
       localTime: now.toString()
@@ -240,41 +172,40 @@ export const SafeBrowser = {
 
   // Event listener management
   addEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (isBrowser()) {
-      document.addEventListener(event, handler, options);
+    if (!isBrowser()) {
+      throw new Error('Browser environment required');
     }
+    document.addEventListener(event, handler, options);
   },
 
   removeEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (isBrowser()) {
-      document.removeEventListener(event, handler, options);
+    if (!isBrowser()) {
+      throw new Error('Browser environment required');
     }
+    document.removeEventListener(event, handler, options);
   },
 
   // History API
   getHistory: () => {
     if (!isBrowser()) {
-      return {
-        pushState: () => {},
-        replaceState: () => {},
-        addEventListener: () => {},
-        removeEventListener: () => {}
-      };
+      throw new Error('Browser environment required');
     }
     return history;
   },
 
   // Window event management
   addWindowEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (isBrowser()) {
-      window.addEventListener(event, handler, options);
+    if (!isBrowser()) {
+      throw new Error('Browser environment required');
     }
+    window.addEventListener(event, handler, options);
   },
 
   removeWindowEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (isBrowser()) {
-      window.removeEventListener(event, handler, options);
+    if (!isBrowser()) {
+      throw new Error('Browser environment required');
     }
+    window.removeEventListener(event, handler, options);
   },
 
   // Get current timestamp
@@ -285,16 +216,3 @@ export const SafeBrowser = {
   supportsClickTracking: () => isBrowser(),
   supportsHistoryAPI: () => isBrowser() && typeof history !== 'undefined'
 };
-
-/**
- * Log environment info
- */
-export function logEnvironmentInfo(): void {
-  if (isBrowser()) {
-    console.log('🌐 [Cruxstack] Running in Browser Environment');
-  } else if (isNode()) {
-    console.log('🟢 [Cruxstack] Running in Node.js Environment');
-  } else {
-    console.log('❓ [Cruxstack] Running in Unknown Environment');
-  }
-} 
