@@ -3,7 +3,10 @@
  * 
  * Allows users to send custom events with categories and associated data.
  * Provides a simple API for tracking custom business events.
- * Uses a dedicated endpoint separate from Snowplow.
+ * 
+ * Supports two modes:
+ * - Browser mode: Uses Snowplow integration + fallback to custom endpoint
+ * - Non-browser mode: Uses custom endpoint only
  * 
  * @example
  * ```typescript
@@ -26,13 +29,13 @@
 
 import { sdkLog } from '../../common/utils';
 import { isBrowser } from '../../common/environment';
-import { trackStructEvent } from '@snowplow/browser-tracker';
 import { CruxSDKError } from '../../common/errors';
 
 // Global state for custom events
 let isInitialized = false;
 let debugEnabled = false;
 let customEventsEndpoint = 'https://dev-uii.portqii.com/eventCollector/i';
+let browserModeEnabled = false;
 
 /**
  * Custom event data structure
@@ -50,11 +53,15 @@ export interface CustomEventData {
  * @param debug - Enable debug logging
  * @param appId - Application identifier
  * @param endpoint - Custom endpoint URL (optional)
+ * @param useBrowserMode - Whether to use browser features like Snowplow (optional, defaults to auto-detect)
  */
-export function initCustomEvents(debug: boolean = false, appId?: string, endpoint?: string): void {
+export function initCustomEvents(debug: boolean = false, appId?: string, endpoint?: string, useBrowserMode?: boolean): void {
   
   debugEnabled = debug;
   isInitialized = true;
+  
+  // Determine browser mode: use provided parameter or auto-detect
+  browserModeEnabled = useBrowserMode !== undefined ? useBrowserMode : isBrowser();
   
   if (endpoint) {
     customEventsEndpoint = endpoint;
@@ -62,7 +69,8 @@ export function initCustomEvents(debug: boolean = false, appId?: string, endpoin
   
   sdkLog(debug, '🎯 [CruxCustom] Custom events plugin initialized', {
     endpoint: customEventsEndpoint,
-    appId: appId
+    appId: appId,
+    mode: browserModeEnabled ? 'browser' : 'non-browser'
   });
 }
 
@@ -109,6 +117,10 @@ async function sendToCustomEndpoint(eventData: CustomEventData): Promise<void> {
 
 /**
  * Send a custom event with category and data
+ * 
+ * Automatically adapts based on environment:
+ * - Browser mode: Tries Snowplow first, falls back to custom endpoint
+ * - Non-browser mode: Uses custom endpoint only
  * 
  * @param category - Event category (e.g., 'purchase', 'signup', 'user_action')
  * @param data - Custom data object associated with the event
@@ -169,6 +181,7 @@ export async function cruxCustom(category: string, data: Record<string, any>): P
     if (debugEnabled) {
       sdkLog(true, '🎯 [CruxCustom] Sending custom event:', {
         category,
+        mode: browserModeEnabled ? 'browser' : 'non-browser',
         endpoint: customEventsEndpoint,
         dataKeys: Object.keys(data),
         dataPreview: Object.keys(data).length > 0 ? Object.keys(data).slice(0, 5) : [],
@@ -176,16 +189,27 @@ export async function cruxCustom(category: string, data: Record<string, any>): P
       });
     }
 
-    if (isBrowser()) {
-      // Send via Snowplow structEvent or self-describing event with category and data
-      trackStructEvent({
-        category,
-        action: 'custom',
-        property: JSON.stringify(data), // send all data as a property
-      });
-      sdkLog(debugEnabled, `✅ [CruxCustom] Custom event '${category}' sent via Snowplow structEvent`);
+    if (browserModeEnabled) {
+      // Browser mode: Try Snowplow first, fallback to custom endpoint
+      try {
+        const { trackStructEvent } = await import('@snowplow/browser-tracker');
+        
+        // Send via Snowplow structEvent with category and data
+        trackStructEvent({
+          category,
+          action: 'custom',
+          property: JSON.stringify(data), // send all data as a property
+        });
+        
+        sdkLog(debugEnabled, `✅ [CruxCustom] Custom event '${category}' sent via Snowplow structEvent`);
+      } catch (snowplowError) {
+        // Fallback to custom endpoint if Snowplow fails
+        sdkLog(debugEnabled, '⚠️ [CruxCustom] Snowplow failed, falling back to custom endpoint:', snowplowError);
+        await sendToCustomEndpoint(customEventData);
+        sdkLog(debugEnabled, `✅ [CruxCustom] Custom event '${category}' sent via fallback endpoint`);
+      }
     } else {
-      // Send to custom endpoint
+      // Non-browser mode: Send to custom endpoint only
       await sendToCustomEndpoint(customEventData);
       sdkLog(debugEnabled, `✅ [CruxCustom] Custom event '${category}' sent successfully to custom endpoint`);
     }
