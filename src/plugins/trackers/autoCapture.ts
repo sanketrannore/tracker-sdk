@@ -10,6 +10,7 @@ import { generateEventId, sdkLog, shouldSampleEvent } from '../../common/utils';
 import { initClickTracking, setClickEventDispatcher } from './click-tracker';
 import { initPageTracking, setPageEventDispatcher } from './page-tracker';
 import { sendEventToSnowplow } from '../../libraries/snowplowWrapper';
+import { CruxSDKError } from '../../common/errors';
 
 /**
  * Initialize autocapture modules with default configuration

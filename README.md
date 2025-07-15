@@ -1,146 +1,425 @@
 # @sanketrannore/tracker-sdk
 
-A modern, modular, privacy-aware JavaScript SDK for web analytics.  
-Auto-captures user activity and button clicks, with plugin support, out-of-the-box event enrichment, and easy integration with [audienz.ai](https://audienz.ai) or any web app.
+A powerful, lightweight JavaScript SDK for comprehensive web analytics and event tracking. Automatically captures user interactions, page views, and custom events with rich contextual data.
 
 ---
 
 ## Table of Contents
 
-- [@sanketrannore/tracker-sdk](#sanketrannoretracker-sdk)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Installation](#installation)
-  - [Basic Installation](#basic-installation)
-  - [Custom Event Tracking](#custom-event-tracking)
-  - [Configuration Options](#configuration-options)
-  - [Plugins](#plugins)
-  - [Example enabling plugins:](#example-enabling-plugins)
-  - [API](#api)
-  - [Example: Advanced Usage](#example-advanced-usage)
-  - [License](#license)
-  - [Keywords](#keywords)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Autocapture Features](#autocapture-features)
+- [Custom Event Tracking](#custom-event-tracking)
+- [API Reference](#api-reference)
+- [Examples](#examples)
+- [TypeScript Support](#typescript-support)
+- [License](#license)
 
 ---
 
 ## Features
 
-- Automatic page view and button click tracking
-- Snowplow-based event enrichment (user, device, session, geo, etc.)
-- Pluggable architecture for custom analytics
-- Consent and privacy controls (plugin)
-- TypeScript types and ESM/CJS compatibility
-- Monitoring integration (HyperDX)
+✅ **Automatic Event Capture**
+- Button click tracking with comprehensive context
+- Page view tracking with performance metrics
+- Time-on-page tracking with formatted periods
+- Browser, device, and environment information
+
+✅ **Custom Event Tracking**
+- Send custom business events with structured data
+- Category-based event organization
+- Flexible data payload support
+
+✅ **Rich Data Collection**
+- Element information (ID, classes, text, ARIA labels)
+- Mouse interaction details (coordinates, modifiers)
+- Form context and DOM hierarchy
+- Performance timing and network information
+- Meta tags and document properties
+
+✅ **Developer Experience**
+- TypeScript support with full type definitions
+- Comprehensive error handling with custom error types
+- Debug logging for development
+- Configurable sampling and event limits
+- ESM/CJS compatibility
 
 ---
 
 ## Installation
 
-```sh
+```bash
 npm install @sanketrannore/tracker-sdk
 ```
 
-## Basic Installation
+---
 
-```js
-import { initAnalytics } from "@sanketrannore/tracker-sdk";
+## Quick Start
 
-// Minimal config for web tracking
-const analytics = initAnalytics({
-  snowplow: {
-    collectorUrl: "https://your-snowplow-collector.com",
-    appId: "your-app-id",
-    // See configuration below for advanced options
-  },
-  plugins: {
-    autoCapture: true,
-    buttonClicks: true,
-    // consent: { ... }
-  },
-  monitoring: {
-    // hyperdxConfig: { ... }
-  },
+### Basic Setup
+
+```javascript
+import { cruxstack } from '@sanketrannore/tracker-sdk';
+
+// Initialize the SDK
+await cruxstack.init({
+  appId: 'your-app-id',        // Required
+  userId: 'user-123',          // Optional
+  autoCapture: true,           // Optional (default: true)
+  debugLog: false              // Optional (default: false)
+});
+
+// Track custom events
+await cruxstack.trackCustom('purchase', {
+  productId: '123',
+  amount: 99.99,
+  currency: 'USD'
 });
 ```
 
-## Custom Event Tracking
+### With Error Handling
 
-```js
-analytics.trackEvent("purchase", {
-  productId: "123",
-  value: 49.99,
-  currency: "USD",
-});
-```
+```javascript
+import { cruxstack, CruxSDKError } from '@sanketrannore/tracker-sdk';
 
-## Configuration Options
-
-| Option         | Type   | Description                                    |
-| -------------- | ------ | ---------------------------------------------- |
-| `collectorUrl` | string | Your Snowplow collector endpoint               |
-| `appId`        | string | Unique app identifier                          |
-| `plugins`      | object | Which plugins/features to enable               |
-| `monitoring`   | object | HyperDX or custom monitoring config (optional) |
-
-## Plugins
-
-Our SDK is plugin-first. Toggle features as needed.
-
-`autoCapture`:
-Tracks page views, SPA route changes, and general user activity.
-
-`buttonClicks`:
-Tracks all button click events and enriches with context.
-
-`consent`:
-GDPR/CCPA consent plugin (coming soon).
-
-## Example enabling plugins:
-
-```js
-plugins: {
-  autoCapture: true,
-  buttonClicks: true,
-  consent: { required: true }
+try {
+  await cruxstack.init({
+    appId: 'your-app-id',
+    userId: 'user-123',
+    debugLog: true
+  });
+  
+  await cruxstack.trackCustom('user_signup', {
+    source: 'homepage',
+    method: 'email'
+  });
+} catch (error) {
+  if (error instanceof CruxSDKError) {
+    console.error('SDK Error:', error.message, error.type, error.details);
+  } else {
+    console.error('Unexpected error:', error);
+  }
 }
 ```
 
-## API
+---
 
-`initAnalytics(config)`
-Initializes the SDK and returns the tracking API.
+## Configuration
 
-Returns
-| Method | Description |
-| ------------------------- | ------------------------------------------------ |
-| `trackEvent(name, props)` | Track custom events |
-| `setUserId(userId)` | Set or update the current user ID |
-| `optOut()` | Disable all tracking (if consent plugin enabled) |
-| `shutdown()` | Cleanup listeners and stop tracking |
+### CruxstackConfig Interface
 
-## Example: Advanced Usage
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `appId` | `string` | ✅ **Yes** | - | Unique identifier for your application |
+| `userId` | `string` | ❌ No | `undefined` | User identifier for session tracking |
+| `autoCapture` | `boolean` | ❌ No | `true` | Enable automatic event capture |
+| `debugLog` | `boolean` | ❌ No | `false` | Enable debug logging to console |
 
-```js
-const analytics = initAnalytics({
-  snowplow: {
-    collectorUrl: "https://collector.mycompany.com",
-    appId: "audienz-ai",
+### Minimal Configuration
+
+```javascript
+// Only required parameter
+await cruxstack.init({
+  appId: 'my-app'
+});
+```
+
+### Full Configuration
+
+```javascript
+await cruxstack.init({
+  appId: 'my-app',
+  userId: 'user-123',
+  autoCapture: true,
+  debugLog: true
+});
+```
+
+---
+
+## Autocapture Features
+
+When `autoCapture` is enabled (default), the SDK automatically tracks:
+
+### Button Click Tracking
+
+Captures comprehensive data for all button clicks:
+
+```javascript
+// Automatically captured data includes:
+{
+  type: 'CLICK',
+  timestamp: 1640995200000,
+  elementInfo: {
+    tagName: 'button',
+    id: 'submit-btn',
+    className: 'btn btn-primary',
+    textContent: 'Submit Form',
+    ariaLabel: 'Submit the form',
+    // ... more element data
   },
-  plugins: {
-    autoCapture: true,
-    buttonClicks: true,
-  },
+  eventData: {
+    buttonId: 'submit-btn',
+    buttonText: 'Submit Form',
+    buttonType: 'submit',
+    clickCoordinates: {
+      clientX: 150,
+      clientY: 200,
+      // ... more coordinates
+    },
+    // ... comprehensive event data
+  }
+}
+```
+
+### Page View Tracking
+
+Captures detailed page view information:
+
+```javascript
+// Automatically captured data includes:
+{
+  type: 'PAGE_VIEW',
+  timestamp: 1640995200000,
+  eventData: {
+    pageUrl: 'https://example.com/page',
+    pageTitle: 'Page Title',
+    referrer: 'https://google.com',
+    performanceTiming: {
+      navigationStart: 1640995200000,
+      domContentLoadedEventEnd: 1640995201500,
+      loadEventEnd: 1640995202000,
+      // ... complete timing data
+    },
+    viewport: {
+      width: 1920,
+      height: 1080,
+      // ... viewport data
+    },
+    // ... comprehensive page data
+  }
+}
+```
+
+### Disable Autocapture
+
+```javascript
+await cruxstack.init({
+  appId: 'my-app',
+  autoCapture: false  // Only custom events will be tracked
+});
+```
+
+---
+
+## Custom Event Tracking
+
+### Basic Custom Events
+
+```javascript
+// Track a simple event
+await cruxstack.trackCustom('button_click', {
+  buttonId: 'hero-cta',
+  section: 'homepage'
 });
 
-// Set user ID
-analytics.setUserId("user-789");
-
-// Track a custom event
-analytics.trackEvent("newsletter_signup", { email: "user@email.com" });
-
-// Opt out (if consent enabled)
-analytics.optOut();
+// Track an e-commerce event
+await cruxstack.trackCustom('purchase', {
+  orderId: 'order-123',
+  productId: 'prod-456',
+  amount: 99.99,
+  currency: 'USD',
+  quantity: 2
+});
 ```
+
+### Advanced Custom Events
+
+```javascript
+// Track user behavior
+await cruxstack.trackCustom('feature_usage', {
+  featureName: 'export_data',
+  userId: 'user-123',
+  timestamp: new Date().toISOString(),
+  metadata: {
+    fileFormat: 'csv',
+    recordCount: 1500
+  }
+});
+
+// Track form interactions
+await cruxstack.trackCustom('form_submission', {
+  formId: 'contact-form',
+  fields: ['name', 'email', 'message'],
+  validationErrors: [],
+  submissionTime: Date.now()
+});
+```
+
+### Custom Event Categories
+
+Organize events by category for better analytics:
+
+```javascript
+// User actions
+await cruxstack.trackCustom('user_action', { action: 'login', method: 'google' });
+
+// Business events
+await cruxstack.trackCustom('business_event', { event: 'subscription_upgrade' });
+
+// Technical events
+await cruxstack.trackCustom('technical_event', { event: 'api_error', code: 500 });
+```
+
+---
+
+
+## API Reference
+
+### cruxstack.init(config)
+
+Initialize the SDK with configuration options.
+
+**Parameters:**
+- `config` (CruxstackConfig): Configuration object
+
+**Returns:** `Promise<void>`
+
+**Throws:** `CruxSDKError` if initialization fails
+
+### cruxstack.trackCustom(category, data)
+
+Send a custom event with category and data.
+
+**Parameters:**
+- `category` (string): Event category (required)
+- `data` (Record<string, any>): Event data object (required)
+
+**Returns:** `Promise<void>`
+
+**Throws:** `CruxSDKError` if validation fails or sending fails
+
+**Example:**
+```javascript
+await cruxstack.trackCustom('purchase', {
+  productId: '123',
+  amount: 99.99
+});
+```
+
+---
+
+## Examples
+
+### E-commerce Tracking
+
+```javascript
+// Product view
+await cruxstack.trackCustom('product_view', {
+  productId: 'prod-123',
+  productName: 'Premium Widget',
+  category: 'electronics',
+  price: 99.99,
+  currency: 'USD'
+});
+
+// Add to cart
+await cruxstack.trackCustom('add_to_cart', {
+  productId: 'prod-123',
+  quantity: 2,
+  cartValue: 199.98
+});
+
+// Purchase
+await cruxstack.trackCustom('purchase', {
+  orderId: 'order-456',
+  products: [
+    { id: 'prod-123', quantity: 2, price: 99.99 }
+  ],
+  total: 199.98,
+  currency: 'USD',
+  paymentMethod: 'credit_card'
+});
+```
+
+### User Journey Tracking
+
+```javascript
+// User registration
+await cruxstack.trackCustom('user_registration', {
+  userId: 'user-789',
+  registrationMethod: 'email',
+  source: 'homepage_banner',
+  timestamp: new Date().toISOString()
+});
+
+// Feature usage
+await cruxstack.trackCustom('feature_usage', {
+  featureName: 'dashboard_export',
+  userId: 'user-789',
+  exportFormat: 'pdf',
+  dataRange: '30_days'
+});
+```
+
+### Error and Performance Tracking
+
+```javascript
+// Track application errors
+await cruxstack.trackCustom('app_error', {
+  errorType: 'javascript_error',
+  errorMessage: error.message,
+  errorStack: error.stack,
+  userAgent: navigator.userAgent,
+  url: window.location.href
+});
+
+// Track performance metrics
+await cruxstack.trackCustom('performance_metric', {
+  metricName: 'page_load_time',
+  value: 1500,
+  unit: 'milliseconds',
+  page: '/dashboard'
+});
+```
+
+---
+
+## TypeScript Support
+
+The SDK is built with TypeScript and provides comprehensive type definitions:
+
+```typescript
+import { cruxstack, CruxstackConfig } from '@sanketrannore/tracker-sdk';
+
+// Type-safe configuration
+const config: CruxstackConfig = {
+  appId: 'my-app',
+  userId: 'user-123',
+  autoCapture: true,
+  debugLog: false
+};
+
+// Type-safe custom events
+interface PurchaseEvent {
+  productId: string;
+  amount: number;
+  currency: string;
+}
+
+const purchaseData: PurchaseEvent = {
+  productId: 'prod-123',
+  amount: 99.99,
+  currency: 'USD'
+};
+
+await cruxstack.trackCustom('purchase', purchaseData);
+```
+
+---
+
 
 ## License
 
@@ -150,4 +429,4 @@ Apache License 2.0
 
 ## Keywords
 
-`tracking` `web analytics` `events` `open source`
+`analytics` `event-tracking` `web-analytics` `user-behavior` `javascript-sdk` `typescript`
