@@ -19,6 +19,10 @@ import { sdkLog } from '../common/utils';
  * @param debug - Enable debug logging
  */
 export async function initEmitter(appId: string, debug: boolean): Promise<void> {
+  if (!isBrowser()) {
+    throw new Error('Browser environment required for tracker initialization');
+  }
+  
   const collectorUrl = 'https://dev-uii.portqii.com/eventCollector';
   
   newTracker('sp1', collectorUrl, {
@@ -26,7 +30,7 @@ export async function initEmitter(appId: string, debug: boolean): Promise<void> 
     postPath: '/i',
     credentials: 'omit',
     eventMethod: 'get',
-    platform: isBrowser() ? 'web' : 'srv',
+    platform: 'web',
   });
   
   sdkLog(debug, '✅ [Cruxstack] tracker initialized');

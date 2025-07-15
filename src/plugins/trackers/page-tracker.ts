@@ -13,7 +13,7 @@
  * Supports both initial page loads and route changes in SPAs.
  */
 
-import { SafeBrowser, isBrowser, logEnvironmentInfo } from '../../common/environment';
+import { SafeBrowser, isBrowser } from '../../common/environment';
 import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
 import { sdkLog } from '../../common/utils';
@@ -43,18 +43,10 @@ export function initPageTracking(trackingConfig: AutocaptureConfig): void {
     sdkLog(false, 'Page tracking already active', trackingConfig);
     return;
   }
-  
-  if (!trackingConfig.pageViews) {
-    sdkLog(false, 'Page tracking disabled in config', trackingConfig);
-    return;
-  }
 
-  // Log environment info
-  logEnvironmentInfo();
-
-  // Check if page tracking is supported in this environment
-  if (!SafeBrowser.supportsPageTracking()) {
-    sdkLog(false, '⚠️ [Cruxstack] Page tracking not supported in this environment (Node.js)');
+  // Check if we're in a browser environment
+  if (!isBrowser()) {
+    sdkLog(false, '❌ [Cruxstack] Browser environment required for page tracking');
     return;
   }
 
@@ -109,16 +101,10 @@ export function isPageTrackingActive(): boolean {
 }
 
 /**
- * Manually track current page view
- * Useful for SPA route changes that aren't automatically detected
- * 
- * @example
- * ```typescript
- * // Call this when route changes in your SPA
- * trackAutocapturePageView();
- * ```
+ * Track current page view (internal use only)
+ * @private
  */
-export function trackAutocapturePageView(): void {
+function trackAutocapturePageView(): void {
   if (!isActive || !eventDispatcher) return;
   
   const newUrl = SafeBrowser.getLocation().href;
@@ -186,18 +172,13 @@ export function trackCurrentPageTime(): void {
 function trackInitialPageView(): void {
   sdkLog(false, '📄 [Cruxstack] Tracking initial page view');
   
-  // In browser: wait for page to fully load to get accurate performance data
-  if (isBrowser()) {
-    if (document.readyState === 'complete') {
-      trackAutocapturePageView();
-    } else {
-      SafeBrowser.addWindowEventListener('load', () => {
-        setTimeout(() => trackAutocapturePageView(), 100);
-      });
-    }
+  // Wait for page to fully load to get accurate performance data
+  if (document.readyState === 'complete') {
+    trackAutocapturePageView();
   } else {
-    // In Node.js: track immediately since there's no DOM to wait for
-    setTimeout(() => trackAutocapturePageView(), 100);
+    SafeBrowser.addWindowEventListener('load', () => {
+      setTimeout(() => trackAutocapturePageView(), 100);
+    });
   }
 }
 
@@ -206,24 +187,23 @@ function trackInitialPageView(): void {
  * @private
  */
 function setupRouteChangeDetection(): void {
-  // Only set up route detection in browser environments
-  if (!SafeBrowser.supportsHistoryAPI()) {
+  // Check if History API is available
+  if (typeof history === 'undefined') {
     sdkLog(false, 'History API not supported, skipping route change detection', config);
     return;
   }
 
   // Override pushState and replaceState for SPA navigation
-  const history = SafeBrowser.getHistory() as any;
   const originalPushState = history.pushState;
   const originalReplaceState = history.replaceState;
   
-  history.pushState = function(...args: any[]) {
-    originalPushState.apply(history, args);
+  history.pushState = function(data: any, unused: string, url?: string | URL | null) {
+    originalPushState.call(history, data, unused, url);
     setTimeout(() => handleRouteChange(), 100);
   };
   
-  history.replaceState = function(...args: any[]) {
-    originalReplaceState.apply(history, args);
+  history.replaceState = function(data: any, unused: string, url?: string | URL | null) {
+    originalReplaceState.call(history, data, unused, url);
     setTimeout(() => handleRouteChange(), 100);
   };
   
