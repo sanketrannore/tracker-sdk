@@ -29,14 +29,9 @@
  * ```
  */
 
-import {
-  setUserId
-} from '@snowplow/browser-tracker';
-
 import { isBrowser } from '../common/environment';
 import type { AutocaptureConfig, CruxstackConfig } from '../common/types';
 import { sdkLog } from '../common/utils';
-import { CruxSDKError } from '../common/errors';
 
 import { initEmitter } from '../libraries/emitter';
 import { initializeAutocapture } from '../plugins/trackers/autoCapture';
@@ -51,12 +46,14 @@ import {
 let isEnabled = false;
 let config: AutocaptureConfig = {};
 let debug = false;
+let isBrowserEnvironment = false;
 
 /**
  * Initialize Cruxstack SDK
  * 
- * Sets up tracker and initializes autocapture modules.
- * Call this once when your application loads.
+ * Sets up tracker and initializes modules based on environment.
+ * In browser environments: enables autocapture + custom events via Snowplow
+ * In non-browser environments: enables custom events via direct endpoint only
  * 
  * @param options - SDK configuration options
  * 
@@ -71,43 +68,59 @@ let debug = false;
  */
 export async function initCruxstack(options: CruxstackConfig): Promise<void> {
   debug = options.debugLog === true;
-  sdkLog(debug, '🚀 [Cruxstack] Initializing SDK with config:', options);
+  isBrowserEnvironment = isBrowser();
   
-  // // Check if we're in a browser environment
-  // if (!isBrowser()) {
-  //   sdkLog(debug, '❌ [Cruxstack] Browser environment required');
-  //   throw new CruxSDKError('Browser environment required', 'general', { details: { message: 'Browser environment required' } });
-  // }
+  sdkLog(debug, '🚀 [Cruxstack] Initializing SDK with config:', options);
+  sdkLog(debug, `🌍 [Cruxstack] Environment: ${isBrowserEnvironment ? 'Browser' : 'Non-browser'}`);
   
   // Assign the options to the global config for autocapture
   config = options;
 
-  // Initialize emitter
-  await initEmitter(options.appId, debug);
-  
-  // Set user ID if provided
-  if (options.userId) {
-    setUserId(options.userId);
-    sdkLog(debug, '✅ [Cruxstack] User ID set:', options.userId);
-  }
-  
-  // Initialize autocapture (defaults to enabled)
-  isEnabled = options.autoCapture !== false;
-  
-  if (isEnabled) {
-    sdkLog(debug, '✅ [Cruxstack] AutoCapture enabled - initializing browser trackers');
-    // Pass actual options instead of empty config
-    await initializeAutocapture(options, isEnabled, debug);
+  if (isBrowserEnvironment) {
+    // Browser environment: Full feature set
+    sdkLog(debug, '🌐 [Cruxstack] Browser environment detected - enabling full feature set');
+    
+    // Initialize emitter (Snowplow tracker)
+    await initEmitter(options.appId, debug);
+    
+    // Set user ID if provided (only works in browser with Snowplow)
+    if (options.userId) {
+      const { setUserId } = await import('@snowplow/browser-tracker');
+      setUserId(options.userId);
+      sdkLog(debug, '✅ [Cruxstack] User ID set:', options.userId);
+    }
+    
+    // Initialize autocapture (defaults to enabled)
+    isEnabled = options.autoCapture !== false;
+    
+    if (isEnabled) {
+      sdkLog(debug, '✅ [Cruxstack] AutoCapture enabled - initializing browser trackers');
+      await initializeAutocapture(options, isEnabled, debug);
+    } else {
+      sdkLog(debug, '❌ [Cruxstack] AutoCapture disabled');
+    }
+    
+    // Initialize custom events (browser mode - uses Snowplow)
+    initCustomEvents(debug, options.appId, undefined, true);
+    
   } else {
-    sdkLog(debug, '❌ [Cruxstack] AutoCapture disabled - no tracking will occur');
+    // Non-browser environment: Custom events only
+    sdkLog(debug, '📱 [Cruxstack] Non-browser environment detected - enabling custom events only');
+    
+    // AutoCapture is not available in non-browser environments
+    isEnabled = false;
+    sdkLog(debug, '❌ [Cruxstack] AutoCapture not available in non-browser environment');
+    
+    if (options.userId) {
+      sdkLog(debug, '⚠️ [Cruxstack] User ID setting not available in non-browser environment');
+    }
+    
+    // Initialize custom events (non-browser mode - direct endpoint only)
+    initCustomEvents(debug, options.appId, undefined, false);
   }
-  
-  // Initialize custom events
-  initCustomEvents(debug, options.appId);
   
   sdkLog(debug, '🎉 [Cruxstack] SDK initialization complete');
 }
-
 
 export const cruxstack = {
   init: initCruxstack,

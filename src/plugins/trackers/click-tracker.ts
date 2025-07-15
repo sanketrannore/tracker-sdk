@@ -13,7 +13,7 @@
  * Only tracks actual button elements, not all clickable elements.
  */
 
-import { SafeBrowser, isBrowser } from '../../common/environment';
+import { SafeBrowser } from '../../common/environment';
 import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
 import { getElementInfo } from '../../common/utils';
@@ -34,16 +34,11 @@ export function initClickTracking(config: AutocaptureConfig): void {
     return;
   }
   
-  // Check if we're in a browser environment
-  if (!isBrowser()) {
-    sdkLog(config.debugLog || false, '❌ [Cruxstack] Browser environment required for click tracking');
-    return;
-  }
-
-  // Add global click listener
+  // Add global click listener (SafeBrowser handles environment checks internally)
   SafeBrowser.addEventListener('click', handleButtonClick, true);
   isActive = true;
   
+  sdkLog(config.debugLog || false, 'Click tracking initialized');
 }
 
 /**
