@@ -1,14 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2019",
+    "target": "ES2020",
     "module": "ESNext",
+    "moduleResolution": "node",
     "declaration": true,
     "outDir": "./dist",
-    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "moduleResolution": "node"
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["src/common", "src/plugins", "src/web"]
-}
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+} 

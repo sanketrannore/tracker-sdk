@@ -13,7 +13,7 @@
  * Supports both initial page loads and route changes in SPAs.
  */
 
-import { SafeBrowser, isBrowser } from '../../common/environment';
+import { SafeBrowser } from '../../common/environment';
 import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
 import { sdkLog } from '../../common/utils';
@@ -26,7 +26,7 @@ let eventDispatcher: ((event: AutocaptureEvent) => void) | null = null;
 
 // Time tracking state
 let currentPageStartTime: number = Date.now();
-let currentUrl: string = SafeBrowser.getLocation().href;
+let currentUrl: string = ''; // Initialize as empty string, set during init
 let previousPageData: any = null;
 
 // Prevent duplicate events
@@ -45,14 +45,11 @@ export function initPageTracking(trackingConfig: AutocaptureConfig): void {
     return;
   }
 
-  // Check if we're in a browser environment
-  if (!isBrowser()) {
-    sdkLog(false, '❌ [Cruxstack] Browser environment required for page tracking');
-    return;
-  }
-
   config = trackingConfig;
   isActive = true;
+  
+  // Initialize currentUrl when tracker is actually started (browser environment guaranteed)
+  currentUrl = SafeBrowser.getLocation().href;
   
   // Track initial page load
   trackInitialPageView();
