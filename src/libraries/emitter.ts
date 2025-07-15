@@ -8,6 +8,7 @@
 import { newTracker } from '@snowplow/browser-tracker';
 import { isBrowser } from '../common/environment';
 import { sdkLog } from '../common/utils';
+import { CruxSDKError } from '../common/errors';
 
 /**
  * Initialize the tracker with hardcoded collector URL
@@ -19,19 +20,25 @@ import { sdkLog } from '../common/utils';
  * @param debug - Enable debug logging
  */
 export async function initEmitter(appId: string, debug: boolean): Promise<void> {
-  if (!isBrowser()) {
-    throw new Error('Browser environment required for tracker initialization');
-  }
+  // if (!isBrowser()) {
+  //   throw new CruxSDKError('Browser environment required for tracker initialization', 'general');
+  // }
   
   const collectorUrl = 'https://dev-uii.portqii.com/eventCollector';
   
-  newTracker('sp1', collectorUrl, {
-    appId,
-    postPath: '/i',
-    credentials: 'omit',
-    eventMethod: 'get',
-    platform: 'web',
-  });
-  
-  sdkLog(debug, '✅ [Cruxstack] tracker initialized');
+  try {
+    newTracker('sp1', collectorUrl, {
+      appId,
+      postPath: '/i',
+      credentials: 'omit',
+      eventMethod: 'post',
+      platform: 'web',
+    });
+    sdkLog(debug, '✅ [Cruxstack] tracker initialized');
+  } catch (error) {
+    if (error instanceof CruxSDKError) {
+      throw error;
+    }
+    throw new CruxSDKError('Failed to initialize tracker', 'general', { error });
+  }
 }
