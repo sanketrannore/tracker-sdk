@@ -9,6 +9,7 @@ import { trackSelfDescribingEvent } from '@snowplow/browser-tracker';
 import type { AutocaptureEvent } from '../common/types';
 import { EventType } from '../common/types';
 import { sdkLog } from '../common/utils';
+import { CruxSDKError } from '../common/errors';
 
 /**
  * Send a page view event to Snowplow collector
@@ -44,17 +45,24 @@ export function sendPageViewToSnowplow(event: AutocaptureEvent, debug: boolean):
       });
   }
 
-  trackSelfDescribingEvent({
-    event: {
-      schema: 'iglu:com.cruxstack/page_view/jsonschema/1-0-0',
-      data: {
-        ...event.eventData,
-        routeInfo: event.routeInfo,
-        capturedAt: new Date(event.timestamp).toISOString(),
-        eventId: event.id
+  try {
+    trackSelfDescribingEvent({
+      event: {
+        schema: 'iglu:com.cruxstack/page_view/jsonschema/1-0-0',
+        data: {
+          ...event.eventData,
+          routeInfo: event.routeInfo,
+          capturedAt: new Date(event.timestamp).toISOString(),
+          eventId: event.id
+        }
       }
+    }, ['sp1']);
+  } catch (error) {
+    if (error instanceof CruxSDKError) {
+      throw error;
     }
-  }, ['sp1']);
+    throw new CruxSDKError('Failed to send page view event to Snowplow', 'general', { eventId: event.id });
+  }
 
   if (debug) {
     console.log('✅ [Snowplow] Page view event sent successfully');
@@ -107,17 +115,24 @@ export function sendButtonClickToSnowplow(event: AutocaptureEvent, debug: boolea
       });
   }
 
-  trackSelfDescribingEvent({
-    event: {
-      schema: 'iglu:com.cruxstack/button_click/jsonschema/1-0-0',
-      data: {
-        ...event.eventData,
-        elementInfo: event.elementInfo,
-        capturedAt: new Date(event.timestamp).toISOString(),
-        eventId: event.id
+  try {
+    trackSelfDescribingEvent({
+      event: {
+        schema: 'iglu:com.cruxstack/button_click/jsonschema/1-0-0',
+        data: {
+          ...event.eventData,
+          elementInfo: event.elementInfo,
+          capturedAt: new Date(event.timestamp).toISOString(),
+          eventId: event.id
+        }
       }
+    }, ['sp1']);
+  } catch (error) {
+    if (error instanceof CruxSDKError) {
+      throw error;
     }
-  }, ['sp1']);
+    throw new CruxSDKError('Failed to send button click event to Snowplow', 'general', { eventId: event.id });
+  }
 
   if (debug) {
     console.log('✅ [Snowplow] Button click event sent successfully');

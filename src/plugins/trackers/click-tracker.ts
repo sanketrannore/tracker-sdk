@@ -17,6 +17,7 @@ import { SafeBrowser, isBrowser } from '../../common/environment';
 import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
 import { getElementInfo } from '../../common/utils';
+import { sdkLog } from '../../common/utils';
 
 // Global state
 let isActive = false;
@@ -35,7 +36,7 @@ export function initClickTracking(config: AutocaptureConfig): void {
   
   // Check if we're in a browser environment
   if (!isBrowser()) {
-    console.log('❌ [Cruxstack] Browser environment required for click tracking');
+    sdkLog(config.debugLog || false, '❌ [Cruxstack] Browser environment required for click tracking');
     return;
   }
 
@@ -43,20 +44,6 @@ export function initClickTracking(config: AutocaptureConfig): void {
   SafeBrowser.addEventListener('click', handleButtonClick, true);
   isActive = true;
   
-}
-
-/**
- * Stop button click tracking
- * Removes event listeners and cleans up
- */
-export function stopClickTracking(): void {
-  if (!isActive) return;
-  
-  SafeBrowser.removeEventListener('click', handleButtonClick, true);
-  isActive = false;
-  eventDispatcher = null;
-  
-  console.log('🔘 [Cruxstack] Click tracking stopped');
 }
 
 /**
@@ -69,14 +56,6 @@ export function setClickEventDispatcher(dispatcher: (event: AutocaptureEvent) =>
   eventDispatcher = dispatcher;
 }
 
-/**
- * Check if click tracking is currently active
- * 
- * @returns True if tracking is active
- */
-export function isClickTrackingActive(): boolean {
-  return isActive;
-}
 
 /**
  * Handle click events and filter for buttons
@@ -97,7 +76,7 @@ function handleButtonClick(event: Event): void {
   try {
     captureButtonClickData(mouseEvent, target);
   } catch (error) {
-    console.error('❌ [Cruxstack] Error capturing button click:', error);
+    sdkLog(false, '❌ [Cruxstack] Error capturing button click:', error);
   }
 }
 

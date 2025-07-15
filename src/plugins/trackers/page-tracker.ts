@@ -17,6 +17,7 @@ import { SafeBrowser, isBrowser } from '../../common/environment';
 import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { EventType } from '../../common/types';
 import { sdkLog } from '../../common/utils';
+import { CruxSDKError } from '../../common/errors';
 
 // Global state
 let isActive = false;
@@ -145,6 +146,12 @@ function trackAutocapturePageView(): void {
     // Dispatch the event
     eventDispatcher(pageViewEvent);
     
+  } catch (error) {
+    if (error instanceof CruxSDKError) {
+      sdkLog(false, 'Error capturing page view event:', error.message, error.details);
+    } else {
+      sdkLog(false, 'Error capturing page view event:', error);
+    }
   } finally {
     // Always reset the processing flag
     setTimeout(() => {
