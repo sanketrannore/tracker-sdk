@@ -2,13 +2,13 @@
  * Emitter Module
  * 
  * Handles the initialization and configuration of the tracker.
- * This module is responsible for setting up the connection to the collector.
+ * This module is responsible for setting up the connection to the event collector.
  * Only initializes Snowplow tracker in browser environments.
  */
 
-import { isBrowser } from '../common/environment';
 import { sdkLog } from '../common/utils';
 import { CruxSDKError } from '../common/errors';
+import { assertBrowserEnv } from '../common/environment';
 
 /**
  * Initialize the tracker with hardcoded collector URL
@@ -23,11 +23,7 @@ import { CruxSDKError } from '../common/errors';
  * @param debug - Enable debug logging
  */
 export async function initEmitter(appId: string, debug: boolean): Promise<void> {
-  if (!isBrowser()) {
-    sdkLog(debug, '⚠️ [Cruxstack] Non-browser environment detected, skipping Snowplow tracker initialization');
-    return;
-  }
-  
+  assertBrowserEnv();
   const collectorUrl = 'https://dev-uii.portqii.com/eventCollector';
   
   try {
@@ -40,11 +36,11 @@ export async function initEmitter(appId: string, debug: boolean): Promise<void> 
       eventMethod: 'post',
       platform: 'web',
     });
-    sdkLog(debug, '✅ [Cruxstack] Snowplow tracker initialized');
+    // Removed unnecessary log for tracker initialization
   } catch (error) {
     if (error instanceof CruxSDKError) {
       throw error;
     }
-    throw new CruxSDKError('Failed to initialize Snowplow tracker', 'general', { error });
+    throw new CruxSDKError('Failed to initialize event collector', 'general', { error });
   }
 }
