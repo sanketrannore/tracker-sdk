@@ -76,11 +76,7 @@ export async function initCruxstack(options: CruxstackConfig): Promise<void> {
   debug = options.debugLog === true;
   sdkLog(debug, '🚀 [Cruxstack] Initializing SDK with config:', options);
   config = options;
-  await initEmitter(options.appId, debug);
-  if (options.userId) {
-    const { setUserId } = await import('@snowplow/browser-tracker');
-    setUserId(options.userId);
-  }
+  await initEmitter(options.appId, debug, options.userId);
   isEnabled = options.autoCapture !== false;
   if (isEnabled) {
     await initializeAutocapture(options, isEnabled, debug);

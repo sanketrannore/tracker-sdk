@@ -22,20 +22,23 @@ import { assertBrowserEnv } from '../common/environment';
  * @param appId - Application identifier for the tracker
  * @param debug - Enable debug logging
  */
-export async function initEmitter(appId: string, debug: boolean): Promise<void> {
+export async function initEmitter(appId: string, debug: boolean, userId: string | undefined): Promise<void> {
   assertBrowserEnv();
-  const collectorUrl = 'https://dev-uii.portqii.com/eventCollector';
+  const collectorUrl = 'https://dev-uii.portqii.com/api/v1/events';
   
   try {
-    const { newTracker } = await import('@snowplow/browser-tracker');
-    
-    newTracker('sp1', collectorUrl, {
+    const { newTracker, setUserId } = await import('@snowplow/browser-tracker');
+    const sp = newTracker('sp1', collectorUrl, {
       appId,
-      postPath: '/i',
+      postPath: '/',
       credentials: 'omit',
       eventMethod: 'post',
       platform: 'web',
     });
+
+    if (userId) {
+      setUserId(userId, ['sp1']);
+    }
     // Removed unnecessary log for tracker initialization
   } catch (error) {
     if (error instanceof CruxSDKError) {
