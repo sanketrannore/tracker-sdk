@@ -15,21 +15,26 @@ export function isBrowser(): boolean {
 }
 
 /**
+ * Throws an error if not in a browser environment
+ */
+export function assertBrowserEnv(): void {
+  if (!isBrowser()) {
+    throw new Error('This Cruxstack SDK can only be used in a browser environment. Check out the Node SDK here: https://github.com/sanketrannore/node-tracker-sdk');
+  }
+}
+
+/**
  * Browser API wrappers - browser only
  */
 export const SafeBrowser = {
   // Window-related APIs
   getLocation: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     return window.location;
   },
 
   getViewport: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     return {
       width: window.innerWidth,
       height: window.innerHeight,
@@ -45,9 +50,7 @@ export const SafeBrowser = {
 
   // Document-related APIs
   getDocument: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     return {
       title: document.title,
       characterSet: document.characterSet,
@@ -60,9 +63,7 @@ export const SafeBrowser = {
   },
 
   getMetaTags: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     
     const metaTags: Record<string, string> = {};
     const metas = document.getElementsByTagName('meta');
@@ -82,9 +83,7 @@ export const SafeBrowser = {
 
   // Navigator-related APIs
   getNavigator: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     return {
       userAgent: navigator.userAgent,
       language: navigator.language,
@@ -98,9 +97,7 @@ export const SafeBrowser = {
 
   // Performance APIs
   getPerformanceTiming: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     
     const timing = performance.timing;
     const navigation = performance.navigation;
@@ -137,9 +134,7 @@ export const SafeBrowser = {
 
   // Network connection API
   getConnection: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     
     const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
     
@@ -156,9 +151,7 @@ export const SafeBrowser = {
 
   // Timezone information
   getTimezone: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     
     const now = new Date();
     
@@ -172,39 +165,29 @@ export const SafeBrowser = {
 
   // Event listener management
   addEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     document.addEventListener(event, handler, options);
   },
 
   removeEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     document.removeEventListener(event, handler, options);
   },
 
   // History API
   getHistory: () => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     return history;
   },
 
   // Window event management
   addWindowEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     window.addEventListener(event, handler, options);
   },
 
   removeWindowEventListener: (event: string, handler: EventListener, options?: any) => {
-    if (!isBrowser()) {
-      throw new Error('Browser environment required');
-    }
+    assertBrowserEnv();
     window.removeEventListener(event, handler, options);
   },
 
@@ -212,7 +195,7 @@ export const SafeBrowser = {
   now: () => Date.now(),
 
   // Check if environment supports specific features
-  supportsPageTracking: () => isBrowser(),
-  supportsClickTracking: () => isBrowser(),
-  supportsHistoryAPI: () => isBrowser() && typeof history !== 'undefined'
+  supportsPageTracking: () => true,
+  supportsClickTracking: () => true,
+  supportsHistoryAPI: () => true
 };

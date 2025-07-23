@@ -9,7 +9,7 @@ import type { AutocaptureConfig, AutocaptureEvent } from '../../common/types';
 import { generateEventId, sdkLog, shouldSampleEvent } from '../../common/utils';
 import { initClickTracking, setClickEventDispatcher } from './click-tracker';
 import { initPageTracking, setPageEventDispatcher } from './page-tracker';
-import { sendEventToSnowplow } from '../../libraries/snowplowWrapper';
+import { sendEventToEventCollector } from '../../libraries/eventCollectorWrapper';
 import { CruxSDKError } from '../../common/errors';
 
 /**
@@ -37,8 +37,6 @@ export async function initializeAutocapture(config: AutocaptureConfig, isEnabled
   // Start individual tracking modules
   initClickTracking(config);
   initPageTracking(config);
-
-  sdkLog(debug, '[Cruxstack] Autocapture initialized with configuration:', config);
 }
 
 /**
@@ -67,8 +65,8 @@ export function processAndSendEvent(event: AutocaptureEvent, isEnabled: boolean,
     // Log event processing
     sdkLog(debug, '📤 [Cruxstack] Processing event:', event.type);
     
-    // Send event to Snowplow via wrapper
-    sendEventToSnowplow(eventWithId, debug);
+    // Send event to event collector via wrapper
+    sendEventToEventCollector(eventWithId, debug);
     
     sdkLog(debug, '✅ [Cruxstack] Event sent to collector successfully');
   } catch (error) {
