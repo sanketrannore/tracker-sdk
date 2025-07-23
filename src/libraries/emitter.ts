@@ -30,7 +30,7 @@ export async function initEmitter(appId: string, debug: boolean, userId: string 
     const { newTracker, setUserId } = await import('@snowplow/browser-tracker');
     const sp = newTracker('sp1', collectorUrl, {
       appId,
-      postPath: '/',
+      postPath: '/sdk',
       credentials: 'omit',
       eventMethod: 'post',
       platform: 'web',
