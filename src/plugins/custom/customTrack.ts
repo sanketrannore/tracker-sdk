@@ -30,7 +30,7 @@ import { CruxSDKError } from '../../common/errors';
 // Global state for custom events
 let isInitialized = false;
 let debugEnabled = false;
-let customEventsEndpoint = 'https://dev-uii.portqii.com/api/v1/events';
+let customEventsEndpoint = 'https://dev-uii.portqii.com/api/v1/events/sdk';
 
 /**
  * Custom event data structure
