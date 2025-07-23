@@ -51,6 +51,11 @@ export function setClickEventDispatcher(dispatcher: (event: AutocaptureEvent) =>
   eventDispatcher = dispatcher;
 }
 
+export function stopClickTracking(): void {
+  if (!isActive) return;
+  SafeBrowser.removeEventListener('click', handleButtonClick, true);
+  isActive = false;
+}
 
 /**
  * Handle click events and filter for buttons
