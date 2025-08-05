@@ -44,14 +44,14 @@ export function init(config: CruxstackConfig) {
     }
 
     // Validate config
-    if (!config.appId) {
+    if (!config.clientId) {
       throw new Error(
-        "Cruxstack: appId is required. Please provide a valid application identifier."
+        "Cruxstack: clientId is required. Please provide a valid client identifier."
       );
     }
 
-    if (typeof config.appId !== "string" || config.appId.trim() === "") {
-      throw new Error("Cruxstack: appId must be a non-empty string.");
+    if (typeof config.clientId !== "string" || config.clientId.trim() === "") {
+      throw new Error("Cruxstack: clientId must be a non-empty string.");
     }
 
     // Store config globally
@@ -60,12 +60,12 @@ export function init(config: CruxstackConfig) {
     // Initialize core modules
     sessionManager = new SessionManager(config);
     eventQueue = new EventQueue();
-    apiClient = new ApiClient(config.debugLog || false);
+    apiClient = new ApiClient(config.debugLog || false, config.clientId);
     eventTracker = new EventTracker(
       apiClient,
       eventQueue,
       sessionManager,
-      config.appId
+      config.clientId
     );
 
     // Set up autocapture tracking functions
@@ -75,7 +75,7 @@ export function init(config: CruxstackConfig) {
           type: "click",
           data,
           id: generateEventId(),
-          appId: config.appId,
+          clientId: config.clientId,
         });
       },
 
@@ -84,7 +84,7 @@ export function init(config: CruxstackConfig) {
           type: `form_${data.eventType}`,
           data,
           id: generateEventId(),
-          appId: config.appId,
+          clientId: config.clientId,
         });
       },
 
@@ -93,7 +93,7 @@ export function init(config: CruxstackConfig) {
           type: "pageview",
           data,
           id: generateEventId(),
-          appId: config.appId,
+          clientId: config.clientId,
         });
       },
     };
@@ -123,7 +123,7 @@ export function init(config: CruxstackConfig) {
 
     if (config.debugLog) {
       console.log("Cruxstack: SDK initialized successfully", {
-        appId: config.appId,
+        clientId: config.clientId,
         autoCapture: config.autoCapture !== false,
         userId: config.userId || "anonymous",
       });
@@ -169,7 +169,7 @@ export function trackEvent(eventData: {
     id: generateEventId(),
     type: eventData.type,
     data: eventData.data || {},
-    appId: globalConfig.appId,
+    clientId: globalConfig.clientId,
   });
 }
 

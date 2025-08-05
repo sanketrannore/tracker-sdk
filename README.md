@@ -2,7 +2,6 @@
 
 A lightweight, privacy-focused JavaScript SDK for web analytics and event tracking. Built with TypeScript, featuring automatic event capture, intelligent queuing, and robust error handling.
 
-
 ## 🚀 Quick Start
 
 ### Installation
@@ -18,7 +17,7 @@ import { init, cruxCustom } from '@sanketrannore/tracker-sdk';
 
 // Initialize the SDK
 init({
-  appId: 'your-app-id',
+  clientId: 'your-client-id',
   userId: 'user-123',
   autoCapture: true,  // optional, defaults to true
   debugLog: false     // optional, defaults to false
@@ -38,7 +37,7 @@ cruxCustom('purchase_completed', {
 
 ```typescript
 interface CruxstackConfig {
-  appId: string;           // Required: Your application identifier
+  clientId: string;        // Required: Your client identifier
   userId?: string;         // Optional: User identifier
   autoCapture?: boolean;   // Optional: Enable/disable automatic capture (default: true)
   debugLog?: boolean;      // Optional: Enable debug logging (default: false)
@@ -52,15 +51,15 @@ Initializes the SDK with your configuration.
 
 ```javascript
 init({
-  appId: 'my-app-123',
+  clientId: 'my-client-123',
   userId: 'user-456',
   autoCapture: true,
   debugLog: false
 });
 ```
 
-#### `cruxCustom(eventName: string, properties?: object, eventId?: string)`
-Tracks custom events with optional properties and event ID.
+#### `cruxCustom(eventName: string, properties?: object)`
+Tracks custom events with optional properties. Event IDs are automatically generated as UUIDs.
 
 ```javascript
 // Basic event
@@ -73,8 +72,12 @@ cruxCustom('purchase_completed', {
   currency: 'USD'
 });
 
-// Event with custom ID
-cruxCustom('order_placed', { orderId: '12345' }, 'custom-event-id');
+// Event with complex data
+cruxCustom('user_action', {
+  action: 'signup',
+  source: 'homepage',
+  campaign: 'summer-sale'
+});
 ```
 
 ### Utility Functions
@@ -193,7 +196,7 @@ if (isInitialized()) {
 
 ```javascript
 init({
-  appId: 'your-app-id',
+  clientId: 'your-client-id',
   debugLog: true // Enable debug logging
 });
 
@@ -252,6 +255,14 @@ The SDK automatically handles offline scenarios:
 - **Mobile**: iOS Safari 12+, Chrome Mobile 60+
 - **Features**: ES2017+, localStorage, fetch API, Performance API
 
+## 📦 Build Outputs
+
+The SDK is built with Rollup and provides multiple output formats:
+
+- **CommonJS** (`dist/index.js`): For Node.js environments
+- **ES Modules** (`dist/index.mjs`): For modern bundlers
+- **UMD** (`dist/index.min.js`): For browser CDN usage (minified)
+
 ## 🔧 Development
 
 ### TypeScript Support
@@ -259,7 +270,7 @@ The SDK automatically handles offline scenarios:
 import { init, cruxCustom, CruxstackConfig } from '@sanketrannore/tracker-sdk';
 
 const config: CruxstackConfig = {
-  appId: 'my-app',
+  clientId: 'my-client',
   userId: 'user-123'
 };
 
@@ -270,7 +281,7 @@ cruxCustom('test_event', { data: 'value' });
 ### Debug Mode
 ```javascript
 init({
-  appId: 'your-app-id',
+  clientId: 'your-client-id',
   debugLog: true
 });
 

@@ -7,20 +7,20 @@ export class EventTracker {
   private apiClient: ApiClient;
   private eventQueue: EventQueue;
   private sessionManager: SessionManager;
-  private appId: string;
+  private clientId: string;
 
-  constructor(apiClient: ApiClient, eventQueue: EventQueue, sessionManager: SessionManager, appId: string) {
+  constructor(apiClient: ApiClient, eventQueue: EventQueue, sessionManager: SessionManager, clientId: string) {
     this.apiClient = apiClient;
     this.eventQueue = eventQueue;
     this.sessionManager = sessionManager;
-    this.appId = appId;
+    this.clientId = clientId;
   }
 
   async track(eventData: Omit<Event, 'sessionId' | 'userId' | 'timestamp'>): Promise<void> {
     // Create complete event with session data
     const event: Event = {
       ...eventData,
-      appId: this.appId,
+      clientId: this.clientId,
       sessionId: this.sessionManager.getSessionId(),
       userId: this.sessionManager.getUserId(),
       timestamp: Date.now()

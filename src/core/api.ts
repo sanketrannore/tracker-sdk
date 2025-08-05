@@ -1,7 +1,7 @@
 import { Event } from '../common/types';
 
 interface ApiEvent {
-  aid: string;  // appId
+  aid: string;  // clientId
   uid: string;  // userId
   eid: string;  // eventId
   dtm: number;  // datetime
@@ -12,10 +12,12 @@ interface ApiEvent {
 export class ApiClient {
   private endpoint: string;
   private debugLog: boolean;
+  private clientId: string;
 
-  constructor(debugLog: boolean = false) {
+  constructor(debugLog: boolean = false, clientId: string) {
     this.endpoint = 'https://dev-uii.portqii.com/api/v1/events';
     this.debugLog = debugLog;
+    this.clientId = clientId;
   }
 
   async sendEvent(event: Event): Promise<boolean> {
@@ -29,7 +31,7 @@ export class ApiClient {
       }
       
       const apiEvent: ApiEvent = {
-        aid: event.appId,
+        aid: event.clientId,
         uid: event.userId,
         eid: event.id,
         dtm: event.timestamp,
@@ -39,14 +41,13 @@ export class ApiClient {
       
       const response = await fetch(this.endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-client-id': this.clientId },
         body: JSON.stringify(apiEvent),
         keepalive: true
       });
       
       if (!response.ok) {
         if (response.status === 400) {
-          // Log 400 errors as permanent failures
           console.error(`ApiClient: Event rejected (400): ${event.id}`, apiEvent);
           return false; // Don't retry 400 errors
         }

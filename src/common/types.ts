@@ -1,6 +1,6 @@
 export interface CruxstackConfig {
-  /** Application identifier (required) */
-  appId: string;
+  /** Client identifier (required) */
+  clientId: string;
   /** User identifier (optional) */
   userId?: string;
   /** Enable/disable automatic event capture (optional, defaults to true) */
@@ -17,7 +17,7 @@ export interface Event {
   timestamp: number;
   sessionId: string;
   userId: string;
-  appId: string;
+  clientId: string;
 }
 
 // Add this for public event tracking
