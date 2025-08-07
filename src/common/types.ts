@@ -25,7 +25,6 @@ export interface Event {
 
 // Event format for API
 export interface ApiEvent {
-  aid: string;  // clientId
   cid?: string; // customerId (optional)
   uid?: string; // userId (optional)
   eid: string;  // eventId
@@ -33,6 +32,8 @@ export interface ApiEvent {
   e: string;    // event type
   ev: Record<string, any>; // event data
   tv: string; // version
+  sid: string; // sessionId
+  tna: string; // tracker version
 }
 
 // Session data interface

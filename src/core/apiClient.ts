@@ -288,14 +288,15 @@ export class ApiClient {
       }
 
       const apiEvent: ApiEvent = {
-        aid: event.clientId,
         cid: event.customerId,
         uid: event.userId,
         eid: event.id,
         dtm: event.timestamp,
         e: event.type,
         ev: event.data,
-        tv: "v1"
+        tv: "v1",
+        sid: event.sessionId,
+        tna: "browser"
       };
 
       if (this.debugLog) {
