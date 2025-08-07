@@ -1,23 +1,9 @@
-import { CruxstackConfig } from '../common/types';
+import { CruxstackConfig, StorageInterface, SessionData } from '../common/types';
 
 // Session configuration
 const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes of inactivity
 const MAX_SESSION_DURATION = 4 * 60 * 60 * 1000; // 4 hours maximum session
 const SESSION_STORAGE_KEY = 'cruxstack_session';
-
-// Session data interface
-interface SessionData {
-  id: string;
-  startTime: number;
-  lastActivity: number;
-}
-
-// Storage interface for fallback support
-interface StorageInterface {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-}
 
 // Memory storage fallback
 class MemoryStorage implements StorageInterface {

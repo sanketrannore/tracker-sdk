@@ -2,7 +2,6 @@
 export {
   init,
   getUserTraits,
-  callApiMethod,
   getSessionInfo,
   flushEvents,
   getQueueStatus,

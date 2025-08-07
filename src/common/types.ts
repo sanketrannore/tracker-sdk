@@ -23,5 +23,28 @@ export interface Event {
   customerId?: string;
 }
 
-// Add this for public event tracking
-export type PublicEvent = Omit<Event, 'sessionId' | 'userId' | 'timestamp' | 'id'>;
+// Event format for API
+export interface ApiEvent {
+  aid: string;  // clientId
+  cid?: string; // customerId (optional)
+  uid?: string; // userId (optional)
+  eid: string;  // eventId
+  dtm: number;  // datetime
+  e: string;    // event type
+  ev: Record<string, any>; // event data
+  tv: string; // version
+}
+
+// Session data interface
+export interface SessionData {
+  id: string;
+  startTime: number;
+  lastActivity: number;
+}
+
+// Storage interface for fallback support
+export interface StorageInterface {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}

@@ -1,5 +1,5 @@
 import { Event } from '../common/types';
-import { ApiClient } from './api';
+import { ApiClient } from './apiClient';
 import { EventQueue } from './queue';
 import { SessionManager } from './session';
 

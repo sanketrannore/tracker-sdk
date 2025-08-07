@@ -1,7 +1,7 @@
 import { CruxstackConfig, Event } from "../common/types";
 import { SessionManager } from "./session";
 import { EventQueue } from "./queue";
-import { ApiClient } from "./api";
+import { ApiClient } from "./apiClient";
 import { EventTracker } from "./tracker";
 import {
   setupAutocapture,
@@ -129,7 +129,7 @@ export function init(config: CruxstackConfig) {
         clientId: config.clientId,
         customerId: config.customerId,
         autoCapture: config.autoCapture !== false,
-        userId: config.userId || "anonymous",
+        userId: config.userId,
       });
     }
   } catch (error) {
@@ -176,15 +176,15 @@ export function trackEvent(eventData: {
 }
 
 // Public API methods for data fetching
-export async function getUserTraits(userId?: string): Promise<any> {
+export async function getUserTraits(userId: string): Promise<any> {
   if (!apiClient || !globalConfig) {
     throw new Error(
       "Cruxstack: SDK not initialized. Please call init() with your configuration before using API methods."
     );
   }
 
-  if (userId !== undefined && (typeof userId !== "string" || userId.trim() === "")) {
-    throw new Error("Cruxstack: userId must be a non-empty string if provided.");
+  if (typeof userId !== "string" || userId.trim() === "") {
+    throw new Error("Cruxstack: userId must be a non-empty string.");
   }
 
   try {
@@ -192,32 +192,6 @@ export async function getUserTraits(userId?: string): Promise<any> {
   } catch (error) {
     if (globalConfig.debugLog) {
       console.error("Cruxstack: Failed to fetch user traits", error);
-    }
-    throw error;
-  }
-}
-
-// Generic API method for future endpoints
-export async function callApiMethod<T = any>(
-  methodName: string, 
-  params: Record<string, any> = {}, 
-  options: { userId?: string; customHeaders?: Record<string, string> } = {}
-): Promise<T> {
-  if (!apiClient || !globalConfig) {
-    throw new Error(
-      "Cruxstack: SDK not initialized. Please call init() with your configuration before using API methods."
-    );
-  }
-
-  if (!methodName || typeof methodName !== "string" || methodName.trim() === "") {
-    throw new Error("Cruxstack: Method name is required and must be a non-empty string.");
-  }
-
-  try {
-    return await apiClient.callApi<T>(methodName, params, options);
-  } catch (error) {
-    if (globalConfig.debugLog) {
-      console.error(`Cruxstack: API method '${methodName}' failed`, error);
     }
     throw error;
   }
