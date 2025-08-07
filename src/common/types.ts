@@ -1,6 +1,8 @@
 export interface CruxstackConfig {
   /** Client identifier (required) */
   clientId: string;
+  /** Customer identifier (optional) */
+  customerId?: string;
   /** User identifier (optional) */
   userId?: string;
   /** Enable/disable automatic event capture (optional, defaults to true) */
@@ -16,8 +18,9 @@ export interface Event {
   data: Record<string, any>;
   timestamp: number;
   sessionId: string;
-  userId: string;
+  userId: string | undefined;
   clientId: string;
+  customerId?: string;
 }
 
 // Add this for public event tracking

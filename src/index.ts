@@ -1,5 +1,19 @@
-export { init, flushEvents, getSessionInfo, isInitialized, getConfig, resetSession, cleanup, getQueueStatus, clearQueue } from './core/init';
+// Core SDK functions
+export {
+  init,
+  getUserTraits,
+  callApiMethod,
+  getSessionInfo,
+  flushEvents,
+  getQueueStatus,
+  clearQueue,
+  resetSession,
+  isInitialized,
+  cleanup,
+} from './core/init';
+
+// Custom events
 export { cruxCustom } from './trackers/customEvents';
 
-// Export types for TypeScript users
-export type { CruxstackConfig } from './common/types';
+// Types
+export type { CruxstackConfig, Event } from './common/types';

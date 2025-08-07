@@ -18,6 +18,7 @@ import { init, cruxCustom } from '@sanketrannore/tracker-sdk';
 // Initialize the SDK
 init({
   clientId: 'your-client-id',
+  customerId: 'customer-123',  // optional
   userId: 'user-123',
   autoCapture: true,  // optional, defaults to true
   debugLog: false     // optional, defaults to false
@@ -38,6 +39,7 @@ cruxCustom('purchase_completed', {
 ```typescript
 interface CruxstackConfig {
   clientId: string;        // Required: Your client identifier
+  customerId?: string;     // Optional: Customer identifier
   userId?: string;         // Optional: User identifier
   autoCapture?: boolean;   // Optional: Enable/disable automatic capture (default: true)
   debugLog?: boolean;      // Optional: Enable debug logging (default: false)
@@ -52,6 +54,7 @@ Initializes the SDK with your configuration.
 ```javascript
 init({
   clientId: 'my-client-123',
+  customerId: 'customer-456',
   userId: 'user-456',
   autoCapture: true,
   debugLog: false
@@ -77,6 +80,50 @@ cruxCustom('user_action', {
   action: 'signup',
   source: 'homepage',
   campaign: 'summer-sale'
+});
+```
+
+#### `getUserTraits(userId?: string)`
+Fetches user traits from the backend. Returns user behavior patterns and characteristics.
+
+```javascript
+// Get traits for current user
+const traits = await getUserTraits();
+
+// Get traits for specific user
+const userTraits = await getUserTraits('user-123');
+
+// Example response
+{
+  userId: 'user-123',
+  traits: {
+    totalSessions: 15,
+    averageSessionDuration: 1200,
+    favoritePages: ['homepage', 'products'],
+    userType: 'premium',
+    lastActive: '2024-01-15T10:30:00Z'
+  },
+  lastUpdated: '2024-01-15T10:30:00Z'
+}
+```
+
+#### `callApiMethod(methodName: string, params?: object, options?: object)`
+Generic method to call any backend API endpoint. Useful for future features.
+
+```javascript
+// Call any available API method
+const result = await callApiMethod('getUserAnalytics', {
+  dateRange: 'last_30_days',
+  includeEvents: true
+}, {
+  userId: 'user-123' // Optional user context
+});
+
+// Call with custom headers
+const data = await callApiMethod('customEndpoint', {}, {
+  customHeaders: {
+    'x-custom-header': 'value'
+  }
 });
 ```
 
@@ -204,6 +251,50 @@ init({
 console.log(getQueueStatus());
 ```
 
+### API Data Fetching
+
+```javascript
+// Fetch user traits for personalization
+async function loadUserProfile() {
+  try {
+    const traits = await getUserTraits();
+    console.log('User traits:', traits);
+    
+    // Use traits for personalization
+    if (traits.traits.userType === 'premium') {
+      showPremiumFeatures();
+    }
+  } catch (error) {
+    console.error('Failed to load user traits:', error);
+  }
+}
+
+// Fetch multiple data sources
+async function loadDashboardData() {
+  try {
+    const [traits, analytics] = await Promise.all([
+      getUserTraits(),
+      callApiMethod('getUserAnalytics', { dateRange: 'last_7_days' })
+    ]);
+    
+    console.log('Dashboard loaded:', { traits, analytics });
+  } catch (error) {
+    console.error('Failed to load dashboard data:', error);
+  }
+}
+
+// Dynamic method calls
+async function callDynamicMethod(methodName, params) {
+  try {
+    const result = await callApiMethod(methodName, params);
+    return result;
+  } catch (error) {
+    console.error(`Method ${methodName} failed:`, error);
+    throw error;
+  }
+}
+```
+
 ## 🛡️ Privacy & Security
 
 ### Automatic Data Filtering
@@ -286,3 +377,4 @@ init({
 });
 
 // Check browser console for detailed logs
+```

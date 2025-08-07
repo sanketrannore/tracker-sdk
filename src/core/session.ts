@@ -80,9 +80,9 @@ export class SessionManager {
     return sessionData.id;
   }
 
-  getUserId(): string {
+  getUserId(): string | undefined {
     // Always use userId from config, never store it
-    return this.config.userId || 'anonymous';
+    return this.config.userId;
   }
 
   resetSession(): void {

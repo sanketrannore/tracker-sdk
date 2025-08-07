@@ -8,12 +8,14 @@ export class EventTracker {
   private eventQueue: EventQueue;
   private sessionManager: SessionManager;
   private clientId: string;
+  private customerId?: string;
 
-  constructor(apiClient: ApiClient, eventQueue: EventQueue, sessionManager: SessionManager, clientId: string) {
+  constructor(apiClient: ApiClient, eventQueue: EventQueue, sessionManager: SessionManager, clientId: string, customerId?: string) {
     this.apiClient = apiClient;
     this.eventQueue = eventQueue;
     this.sessionManager = sessionManager;
     this.clientId = clientId;
+    this.customerId = customerId;
   }
 
   async track(eventData: Omit<Event, 'sessionId' | 'userId' | 'timestamp'>): Promise<void> {
@@ -21,6 +23,7 @@ export class EventTracker {
     const event: Event = {
       ...eventData,
       clientId: this.clientId,
+      customerId: this.customerId,
       sessionId: this.sessionManager.getSessionId(),
       userId: this.sessionManager.getUserId(),
       timestamp: Date.now()
