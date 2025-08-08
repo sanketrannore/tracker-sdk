@@ -3,6 +3,8 @@ export interface CruxstackConfig {
   clientId: string;
   /** Customer identifier (optional) */
   customerId?: string;
+  /** Customer name (optional, used as cna) */
+  customerName?: string;
   /** User identifier (optional) */
   userId?: string;
   /** Enable/disable automatic event capture (optional, defaults to true) */
@@ -21,11 +23,13 @@ export interface Event {
   userId: string | undefined;
   clientId: string;
   customerId?: string;
+  env?: EnvSnapshot;
 }
 
 // Event format for API
 export interface ApiEvent {
   cid?: string; // customerId (optional)
+  cna?: string; // customer name (optional)
   uid?: string; // userId (optional)
   eid: string;  // eventId
   dtm: number;  // datetime
@@ -33,7 +37,43 @@ export interface ApiEvent {
   ev: Record<string, any>; // event data
   tv: string; // version
   sid: string; // sessionId
-  tna: string; // tracker version
+  tna: string; // tracker name (e.g., web)
+  ua: string; // user agent
+  sh: number; // screen height
+  sw: number; // screen width
+  l: string; // language
+  tz: string; // timezone
+  p: string; // platform
+  an: boolean; // anonymous
+  vh: number; // viewport height
+  vw: number; // viewport width
+  pt: string; // page title
+  pu: string; // page url
+  pp: string; // page path
+  pd: string; // page domain
+  pl: number | null; // page load time
+  pr: string | null; // page referrer
+  ip: string | null; // ip address
+}
+
+// Snapshot of environment/page context captured at event time
+export interface EnvSnapshot {
+  ua: string;
+  sh: number;
+  sw: number;
+  l: string;
+  tz: string;
+  p: string;
+  an: boolean;
+  vh: number;
+  vw: number;
+  pt: string;
+  pu: string;
+  pp: string;
+  pd: string;
+  pl: number | null;
+  pr: string | null;
+  ip: string | null;
 }
 
 // Session data interface

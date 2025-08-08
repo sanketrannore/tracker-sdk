@@ -5,12 +5,19 @@ export class ApiClient {
   private debugLog: boolean;
   private clientId: string;
   private customerId?: string;
+  private customerName?: string;
+  private ipAddress: string | null = null;
+  private ipFetchInFlight: Promise<void> | null = null;
 
-  constructor(clientId: string, customerId?: string, debugLog: boolean = false) {
+  constructor(clientId: string, customerId?: string, customerName?: string, debugLog: boolean = false) {
     this.endpoint = 'https://dev-uii.portqii.com/api/v1';
     this.debugLog = debugLog;
     this.clientId = clientId;
     this.customerId = customerId;
+    this.customerName = customerName;
+
+    // Eagerly resolve IP address client-side (best-effort)
+    this.fetchIpAddress();
   }
 
   // GET request method
@@ -113,7 +120,6 @@ export class ApiClient {
         method: 'POST',
         headers,
         body: JSON.stringify(data),
-        credentials: 'include'
       };
 
       if (this.debugLog) {
@@ -253,25 +259,45 @@ export class ApiClient {
 
   // Handle API response with proper error handling
   private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-      
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch {
-        console.error('Cruxstack: Failed to parse error response');
+    // Success path
+    if (response.ok) {
+      // 204 No Content
+      if (response.status === 204) {
+        return undefined as unknown as T;
       }
 
-      throw new Error(errorMessage);
+      // Try to detect JSON by header
+      const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+      if (contentType.includes('application/json') || contentType.includes('json')) {
+        try {
+          const data = await response.json();
+          return data as T;
+        } catch {
+          // Fall back to text if body is not valid JSON
+          const text = await response.text();
+          return (text as unknown) as T;
+        }
+      }
+
+      // Non-JSON success bodies (e.g., plain "ok")
+      const text = await response.text();
+      return (text as unknown) as T;
     }
 
+    // Error path
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
     try {
-      const data = await response.json();
-      return data as T;
-    } catch (error) {
-      throw new Error('Failed to parse API response');
+      const maybeJson = await response.json();
+      if (maybeJson && (maybeJson.message || maybeJson.error)) {
+        errorMessage = maybeJson.message || maybeJson.error;
+      }
+    } catch {
+      try {
+        const text = await response.text();
+        if (text) errorMessage = text;
+      } catch {}
     }
+    throw new Error(errorMessage);
   }
 
   // Specific method for user traits
@@ -287,24 +313,31 @@ export class ApiClient {
         throw new Error('Unload scenario detected');
       }
 
+      if (!event.env) {
+        throw new Error('Event missing env snapshot');
+      }
+      const env = event.env;
+
       const apiEvent: ApiEvent = {
         cid: event.customerId,
-        uid: event.userId,
+        cna: this.customerName,
+        uid: event.userId, // may be undefined per requirement
         eid: event.id,
         dtm: event.timestamp,
         e: event.type,
         ev: event.data,
-        tv: "v1",
+        tv: 'v1',
         sid: event.sessionId,
-        tna: "browser"
+        tna: 'web',
+        ...env
       };
 
       if (this.debugLog) {
-        console.log('Cruxstack: Sending event', apiEvent);
+        console.log('Cruxstack: Sending event', {events : [apiEvent]});
       }
 
       // Use the post method
-      await this.post('events', apiEvent);
+      await this.post('events', {events : [apiEvent]});
 
       if (this.debugLog) {
         console.log('Cruxstack: Event sent successfully');
@@ -323,5 +356,87 @@ export class ApiClient {
     return document.visibilityState === 'hidden' || 
            navigator.onLine === false ||
            'sendBeacon' in navigator === false;
+  }
+
+  // Build flattened environment+page fields according to API schema
+  private buildEnvironmentFields(event: Event): Omit<
+    ApiEvent,
+    'cid' | 'cna' | 'uid' | 'eid' | 'dtm' | 'e' | 'ev' | 'tv' | 'sid' | 'tna'
+  > {
+    const ua = navigator.userAgent;
+    const screenHeight = typeof screen !== 'undefined' ? screen.height : 0;
+    const screenWidth = typeof screen !== 'undefined' ? screen.width : 0;
+    const language = navigator.language;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const platform = navigator.platform;
+    const anonymous = !event.userId;
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+    const pageTitle = typeof document !== 'undefined' ? document.title : '';
+    const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const pagePath = typeof window !== 'undefined' ? window.location.pathname : '';
+    const pageDomain = typeof window !== 'undefined' ? window.location.hostname : '';
+    const pageReferrer = typeof document !== 'undefined' && document.referrer ? document.referrer : null;
+
+    // Page load time (may be null if not available yet)
+    let pageLoadtime: number | null = null;
+    try {
+      const timing = (performance && (performance as any).timing) || null;
+      if (timing && timing.loadEventEnd > 0 && timing.navigationStart > 0) {
+        pageLoadtime = timing.loadEventEnd - timing.navigationStart;
+      }
+    } catch {}
+
+    // Ensure IP fetch kicked off (non-blocking)
+    if (!this.ipAddress && !this.ipFetchInFlight) {
+      this.fetchIpAddress();
+    }
+
+    return {
+      ua: ua,
+      sh: screenHeight,
+      sw: screenWidth,
+      l: language,
+      tz: timezone,
+      p: platform,
+      an: anonymous,
+      vh: viewportHeight,
+      vw: viewportWidth,
+      pt: pageTitle,
+      pu: pageUrl,
+      pp: pagePath,
+      pd: pageDomain,
+      pl: pageLoadtime,
+      pr: pageReferrer,
+      ip: this.ipAddress ?? null
+    };
+  }
+
+  // Best-effort client-side IP fetch; cached for subsequent events
+  private fetchIpAddress(): void {
+    if (this.ipFetchInFlight) return;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    this.ipFetchInFlight = fetch('https://api.ipify.org?format=json', {
+      signal: controller.signal,
+      credentials: 'omit'
+    })
+      .then(async (res) => {
+        clearTimeout(timeoutId);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && typeof data.ip === 'string') {
+          this.ipAddress = data.ip;
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        this.ipFetchInFlight = null;
+      });
+  }
+
+  // Expose cached IP for snapshotting at event time
+  getCachedIp(): string | null {
+    return this.ipAddress;
   }
 }

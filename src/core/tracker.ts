@@ -2,6 +2,7 @@ import { Event } from '../common/types';
 import { ApiClient } from './apiClient';
 import { EventQueue } from './queue';
 import { SessionManager } from './session';
+import { captureEnvSnapshot } from './utils/env';
 
 export class EventTracker {
   private apiClient: ApiClient;
@@ -26,7 +27,8 @@ export class EventTracker {
       customerId: this.customerId,
       sessionId: this.sessionManager.getSessionId(),
       userId: this.sessionManager.getUserId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      env: captureEnvSnapshot(this.sessionManager.getUserId(), this.apiClient.getCachedIp?.() ?? null)
     };
 
     try {

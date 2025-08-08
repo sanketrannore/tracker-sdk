@@ -1,6 +1,6 @@
-# Cruxstack SDK
+# Cruxstack Web SDK
 
-A lightweight, privacy-focused JavaScript SDK for web analytics and event tracking. Built with TypeScript, featuring automatic event capture, intelligent queuing, and robust error handling.
+A lightweight, privacy-focused JavaScript SDK for web analytics and event tracking. Built with TypeScript, featuring automatic event capture, event-time environment snapshots, intelligent queuing, and robust error handling.
 
 ## 🚀 Quick Start
 
@@ -18,10 +18,11 @@ import { init, cruxCustom } from '@sanketrannore/tracker-sdk';
 // Initialize the SDK
 init({
   clientId: 'your-client-id',
-  customerId: 'customer-123',  // optional
-  userId: 'user-123',
-  autoCapture: true,  // optional, defaults to true
-  debugLog: false     // optional, defaults to false
+  customerId: 'customer-123',        // optional
+  customerName: 'your-customer-name',// optional
+  // userId: 'user-123',             // optional; omit to keep user anonymous
+  autoCapture: true,                 // optional, defaults to true
+  debugLog: false                    // optional, defaults to false
 });
 
 // Track custom events
@@ -38,11 +39,12 @@ cruxCustom('purchase_completed', {
 
 ```typescript
 interface CruxstackConfig {
-  clientId: string;        // Required: Your client identifier
-  customerId?: string;     // Optional: Customer identifier
-  userId?: string;         // Optional: User identifier
-  autoCapture?: boolean;   // Optional: Enable/disable automatic capture (default: true)
-  debugLog?: boolean;      // Optional: Enable debug logging (default: false)
+  clientId: string;         // Required: Your client identifier
+  customerId?: string;      // Optional: Customer identifier
+  customerName?: string;    // Optional: Human-readable customer name
+  userId?: string;          // Optional: User identifier; omit for anonymous
+  autoCapture?: boolean;    // Optional: Enable/disable automatic capture (default: true)
+  debugLog?: boolean;       // Optional: Enable debug logging (default: false)
 }
 ```
 
@@ -83,13 +85,10 @@ cruxCustom('user_action', {
 });
 ```
 
-#### `getUserTraits(userId?: string)`
-Fetches user traits from the backend. Returns user behavior patterns and characteristics.
+#### `getUserTraits(userId: string)`
+Fetches user traits for the given user from the backend (API shape depends on your backend).
 
 ```javascript
-// Get traits for current user
-const traits = await getUserTraits();
-
 // Get traits for specific user
 const userTraits = await getUserTraits('user-123');
 
@@ -107,25 +106,7 @@ const userTraits = await getUserTraits('user-123');
 }
 ```
 
-#### `callApiMethod(methodName: string, params?: object, options?: object)`
-Generic method to call any backend API endpoint. Useful for future features.
-
-```javascript
-// Call any available API method
-const result = await callApiMethod('getUserAnalytics', {
-  dateRange: 'last_30_days',
-  includeEvents: true
-}, {
-  userId: 'user-123' // Optional user context
-});
-
-// Call with custom headers
-const data = await callApiMethod('customEndpoint', {}, {
-  customHeaders: {
-    'x-custom-header': 'value'
-  }
-});
-```
+<!-- Intentionally no generic callApiMethod exported by the SDK. -->
 
 ### Utility Functions
 
@@ -198,9 +179,9 @@ The SDK automatically captures the following events:
 - **Privacy**: Input values are redacted for sensitive fields
 
 ### Page Views
-- **Trigger**: Page load, navigation, SPA route changes
-- **Data**: URL, title, performance metrics, navigation type
-- **SPA Support**: Automatic detection of single-page applications
+- **Trigger**: Page load, SPA route changes (pushState/replaceState/popstate/hashchange)
+- **Data (ev only)**: session metrics, timing, scroll depth percentage
+- **SPA Support**: Automatic detection for SPA navigations
 
 ## 🔧 Advanced Usage
 
@@ -323,17 +304,16 @@ async function callDynamicMethod(methodName, params) {
 
 The SDK automatically handles offline scenarios:
 
-1. **Events are queued** in localStorage when offline
-2. **Automatic retry** when connection is restored
+1. **Events are queued** in localStorage when offline or on network errors
+2. **Automatic retry** when connection is restored; SDK also flushes once on init
 3. **Persistent storage** survives page refreshes
-4. **Intelligent batching** for efficient network usage
+4. **Batch processing** for efficient network usage
 
 ## 🚨 Error Handling
 
 ### Network Failures
-- **404/500 errors**: Events are retried automatically
-- **400 errors**: Permanent failures (bad data) are not retried
-- **Network timeouts**: Events are queued for later retry
+- **5xx/Network**: Events are queued and retried
+- **4xx**: Treated as permanent failures (not retried)
 
 ### Queue Management
 - **Maximum 1000 events** in queue to prevent memory issues

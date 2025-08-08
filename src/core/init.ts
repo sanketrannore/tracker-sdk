@@ -60,7 +60,12 @@ export function init(config: CruxstackConfig) {
     // Initialize core modules
     sessionManager = new SessionManager(config);
     eventQueue = new EventQueue();
-    apiClient = new ApiClient(config.clientId, config.customerId, config.debugLog || false);
+    apiClient = new ApiClient(
+      config.clientId,
+      config.customerId,
+      config.customerName,
+      config.debugLog || false
+    );
     eventTracker = new EventTracker(apiClient, eventQueue, sessionManager, config.clientId, config.customerId);
 
     // Setup autocapture if enabled
@@ -88,7 +93,7 @@ export function init(config: CruxstackConfig) {
 
         trackPageView: (data: PageViewEventData) => {
           eventTracker.track({
-            type: "pageview",
+            type: "page_view",
             data,
             id: generateEventId(),
             clientId: config.clientId,
@@ -123,6 +128,11 @@ export function init(config: CruxstackConfig) {
     // Add event listeners
     window.addEventListener("beforeunload", unloadHandler);
     window.addEventListener("online", onlineHandler);
+
+    // Attempt to flush any queued events immediately on init (ensures delivery of persisted events)
+    if (eventTracker.getQueueStatus().length > 0) {
+      eventTracker.flushQueue();
+    }
 
     if (config.debugLog) {
       console.log("Cruxstack: SDK initialized successfully", {

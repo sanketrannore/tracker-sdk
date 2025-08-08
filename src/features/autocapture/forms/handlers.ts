@@ -1,5 +1,5 @@
 import { FormEventData } from './types';
-import { getCommonProperties, getElementSelector } from '../common/enrichment';
+import { getElementSelector } from '../common/enrichment';
 import { shouldIgnoreElement, redactSensitiveValue, cleanEventData } from '../common/privacy';
 import { RATE_LIMITS } from '../common/constants';
 
@@ -177,14 +177,8 @@ export const processFormEvent = (
     formEventData.submission = analyzeSubmission(form);
   }
   
-  // Merge with common properties
-  const fullData = {
-    ...getCommonProperties(),
-    ...formEventData
-  } as FormEventData;
-  
-  // Clean sensitive data
-  return cleanEventData(fullData) as FormEventData;
+  // Clean sensitive data on event-specific payload only
+  return cleanEventData(formEventData as Record<string, any>) as FormEventData;
 };
 
 // Create debounced handlers for different event types

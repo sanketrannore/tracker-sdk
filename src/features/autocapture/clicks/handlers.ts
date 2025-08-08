@@ -1,5 +1,5 @@
 import { ClickEventData } from './types';
-import { getCommonProperties, getElementSelector, getSafeTextContent } from '../common/enrichment';
+import { getElementSelector, getSafeTextContent } from '../common/enrichment';
 import { shouldIgnoreElement, shouldRateLimit, cleanEventData } from '../common/privacy';
 import { RATE_LIMITS } from '../common/constants';
 
@@ -136,14 +136,8 @@ export const processClickEvent = (event: MouseEvent): ClickEventData | null => {
     };
   }
 
-  // Merge with common properties
-  const fullData = {
-    ...getCommonProperties(),
-    ...clickData
-  } as ClickEventData;
-  
-  // Clean sensitive data
-  return cleanEventData(fullData) as ClickEventData;
+  // Clean sensitive data on event-specific payload only
+  return cleanEventData(clickData as Record<string, any>) as ClickEventData;
 };
 
 // Create throttled click handler
