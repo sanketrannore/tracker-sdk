@@ -62,8 +62,7 @@ export class ApiClient {
 
       const requestOptions: RequestInit = {
         method: 'GET',
-        headers,
-        credentials: 'include'
+        headers
       };
 
       if (this.debugLog) {
@@ -302,7 +301,9 @@ export class ApiClient {
 
   // Specific method for user traits
   async getUserTraits(userId: string): Promise<any> {
-    return this.get(`/users/${userId}/traits`);
+    return this.post(`users/traits?customerId=${this.customerId}`, {
+      userIds: [userId]
+    });
   }
 
   // Send events to backend
